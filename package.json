@@ -1,0 +1,47 @@
+{
+  "name": "videojs-vast",
+  "version": "1.0.0",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/mjs/index.js",
+  "license": "MIT",
+  "config": {
+    "build": {
+      "types": {
+        "outdir": "type",
+        "extension": ".d.ts"
+      },
+      "cjs": {
+        "outdir": "dist/cjs",
+        "extension": ".js"
+      },
+      "mjs": {
+        "outdir": "dist/mjs",
+        "extension": ".js"
+      },
+      "entries": {
+        ".": "./src/index.js"
+      }
+    }
+  },
+  "peerDependencies": {
+    "video.js": "^5.19.2 || ^6 || ^7"
+  },
+  "scripts": {
+    "bundle:cjs": "node ./esbuild.js -t commonjs",
+    "bundle:esm": "node ./esbuild.js -t es6",
+    "bundle:local": "yarn bundle && yalc push",
+    "bundle": "yarn bundle:cjs && yarn bundle:esm",
+    "build": "yarn bundle",
+    "start": "watch --interval=1 'yarn bundle:local' ./src/",
+    "postinstall": "yarn global add yalc"
+  },
+  "dependencies": {
+    "@dailymotion/vast-client": "^4.0.0",
+    "esbuild": "^0.15.0",
+    "videojs-contrib-ads": "^6.9.0",
+    "yargs": "^17.5.1"
+  },
+  "devDependencies": {
+    "watch": "^1.0.2"
+  }
+}
