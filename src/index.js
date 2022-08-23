@@ -29,14 +29,20 @@ class Vast extends Plugin {
       const adToRun = this.getNextAd();
 
       if (adToRun) {
+        // Retrieve the CTA URl to render
+        const ctaUrl = Vast.getBestCtaUrl(adToRun.linear);
+
         player.on('adserror', (evt) => {
           console.error(evt);
+          player.trigger('vast.error');
         });
 
         // send event when ad is playing to remove loading spinner
         player.one('adplaying', () => {
           // Trigger an event to notify the player consumer that the ad is playing
-          player.trigger('vast.play');
+          player.trigger('vast.play', {
+            ctaUrl,
+          });
         });
 
         // resume content when all your linear ads have finished
@@ -105,6 +111,17 @@ class Vast extends Plugin {
   static getBestMediaFile(mediaFilesAvailable) {
     // TO BE DONE - select the best media file based on internet bandwidth and screen size/resolution
     return mediaFilesAvailable[0];
+  }
+
+  /*
+  * This method is responsible for choosing the best URl to redirect the user to when he clicks
+  * on the ad
+  */
+  static getBestCtaUrl(adToRun){
+    if (adToRun.videoClickThroughURLTemplate.url) {
+      return adToRun.videoClickThroughURLTemplate.url;
+    }
+    return false;
   }
 
   /*
