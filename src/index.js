@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import videojs from 'video.js';
 import 'videojs-contrib-ads';
-import { VASTClient } from '@dailymotion/vast-client';
+import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -30,7 +30,10 @@ class Vast extends Plugin {
 
       if (adToRun) {
         // Retrieve the CTA URl to render
-        const ctaUrl = Vast.getBestCtaUrl(adToRun.linear);
+        let ctaUrl = false;
+        if(adToRun.linear) {
+          ctaUrl = Vast.getBestCtaUrl(adToRun.linear);
+        }
 
         player.on('adserror', (evt) => {
           console.error(evt);
@@ -70,8 +73,8 @@ class Vast extends Plugin {
     });
 
     // Now let's fetch some ads shall we?
-    const vastClient = new VASTClient();
-    vastClient.get(options.vastUrl)
+    this.vastClient = new VASTClient();
+    this.vastClient.get(options.vastUrl)
     .then((res) => {
       // Once we are done, trigger adsready event so that we can render a preroll
       this.ads = res.ads;
@@ -88,6 +91,16 @@ class Vast extends Plugin {
   * This method is responsible for rendering a linear ad
   */
   playLinearAd(adToRun) {
+    // Track the impression of an ad 
+    player.one('adplaying', () => {
+      adToRun.linear.tracker.load();
+    });
+
+    // Track the end of an ad
+    player.one('adended', () => {
+      adToRun.linear.tracker.complete();
+    });
+
     // Retrieve the media file from the VAST manifest
     const mediaFile = Vast.getBestMediaFile(adToRun.linear.mediaFiles);
 
@@ -102,6 +115,7 @@ class Vast extends Plugin {
 
     // play linear ad content
     this.player.src(mediaFile.fileURL);
+    
   }
 
   /*
@@ -147,9 +161,11 @@ class Vast extends Plugin {
         switch (creative.type) {
           case 'linear':
             nextAd.linear = creative;
+            nextAd.linear.tracker = new VASTTracker(this.vastClient, adToPlay, creative);
             break;
           case 'companion':
             nextAd.companion = creative;
+            nextAd.companion.tracker = new VASTTracker(this.vastClient, adToPlay, creative);
             break;
           default:
             break;
