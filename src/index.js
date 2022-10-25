@@ -18,6 +18,9 @@ class Vast extends Plugin {
     // Init an empty array that will later contain the ads metadata
     this.ads = [];
 
+    // id used for some events to separate multiple instances in a same page
+    this.id = Vast.getRandomId()
+
     const videojsContribAdsOptions = {
       timeout: 5000, // TO BE DONE - This should be an option
       debug: true, // TO BE DONE - This should be environment specific and/or an option
@@ -37,7 +40,10 @@ class Vast extends Plugin {
 
         player.on('adserror', (evt) => {
           console.error(evt);
-          player.trigger('vast.error');
+          player.trigger('vast.error', {
+            message: evt,
+            tag: options.vastUrl,
+          });
         });
 
         // send event when ad is playing to remove loading spinner
@@ -46,6 +52,13 @@ class Vast extends Plugin {
           player.trigger('vast.play', {
             ctaUrl,
           });
+
+          // manually trigger time event as native timeupdate is not triggered enough
+          clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
+          global[`timeUpdateInterval_${this.id}`] = setInterval(() => {
+              console.info({ position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() })
+              player.trigger('vast.time', { position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() });
+          }, 100);
         });
 
         // resume content when all your linear ads have finished
@@ -54,6 +67,8 @@ class Vast extends Plugin {
           player.ads.endLinearAdMode();
           // Trigger an event when the ad is finished to notify the player consumer
           player.isAd = false;
+          // stop emitting vast.time
+          clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.complete');
         });
 
@@ -82,8 +97,13 @@ class Vast extends Plugin {
     })
     .catch((err) => {
       // Deal with the error
-      console.error('VastVjs: Error while fetching VAST XML');
+      const message = 'VastVjs: Error while fetching VAST XML';
+      console.error(message);
       console.error(err);
+      player.trigger('vast.error', {
+        message,
+        tag: options.vastUrl,
+      });
     });
   }
 
@@ -136,6 +156,19 @@ class Vast extends Plugin {
       return adToRun.videoClickThroughURLTemplate.url;
     }
     return false;
+  }
+
+  /*
+  * This method simply generate a randomId
+  */
+  static getRandomId(length) {
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i += 1) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+   }
+   return result;
   }
 
   /*
