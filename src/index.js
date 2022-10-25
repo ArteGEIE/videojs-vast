@@ -92,12 +92,12 @@ class Vast extends Plugin {
   */
   playLinearAd(adToRun) {
     // Track the impression of an ad 
-    player.one('adplaying', () => {
+    this.player.one('adplaying', () => {
       adToRun.linear.tracker.load();
     });
 
     // Track the end of an ad
-    player.one('adended', () => {
+    this.player.one('adended', () => {
       adToRun.linear.tracker.complete();
     });
 
