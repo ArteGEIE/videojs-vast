@@ -2,6 +2,7 @@
 import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
+import { EventEmitter } from 'events';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -11,6 +12,15 @@ class Vast extends Plugin {
 
     this.player = player;
     this.options = options;
+
+    this.internalEventBus = new EventEmitter();
+
+    // Bind events that will be triggered by the player and that we cannot subscribe to later (bug on vjs side)
+    player.on('play', () => { this.internalEventBus.emit('play'); });
+    player.on('pause', () => { this.internalEventBus.emit('pause'); });
+    player.on('timeupdate', (evt, data) => {
+      this.internalEventBus.emit('timeupdate', { currentTime: player.currentTime() });
+    });
 
     // Init a property in the player object to keep track of the ad state
     player.isAd = true;
@@ -45,6 +55,7 @@ class Vast extends Plugin {
           // Trigger an event to notify the player consumer that the ad is playing
           player.trigger('vast.play', {
             ctaUrl,
+            adClickCallback: ctaUrl ? () => this.adClickCallback(ctaUrl) : false,
           });
         });
 
@@ -88,6 +99,14 @@ class Vast extends Plugin {
   }
 
   /*
+  * This method is responsible for dealing with the click on the ad
+  */
+  adClickCallback(ctaUrl) {
+    this.player.trigger('vast.click');
+    window.open(ctaUrl, '_blank');
+  }
+
+  /*
   * This method is responsible for rendering a linear ad
   */
   playLinearAd(adToRun) {
@@ -100,6 +119,48 @@ class Vast extends Plugin {
     this.player.one('adended', () => {
       adToRun.linear.tracker.complete();
     });
+
+    // Track when a user clicks on an ad
+    this.player.one('vast.click', () => {
+      adToRun.linear.tracker.click();
+    });
+
+    // Track the video entering or leaving fullscreen
+    this.player.one('fullscreen', (evt, data) => {
+      adToRun.linear.tracker.setFullscreen(data.state);
+    });
+
+    // Track the user muting or unmuting the video
+    this.player.one('mute', (evt, data) => {
+      adToRun.linear.tracker.setFullscreen(data.state);
+    });
+    
+    // Track play event
+    this.internalEventBus.on('play', () => {
+      adToRun.linear.tracker.setPaused(false);
+    });
+
+    // Track pause event
+    this.internalEventBus.on('pause', () => {
+      adToRun.linear.tracker.setPaused(true);
+    });
+
+    // Track timeupdate event
+    this.internalEventBus.on('timeupdate', (data) => {
+      adToRun.linear.tracker.setProgress(data.currentTime);
+    });
+
+    // Track the first timeupdate event - used for impression tracking
+    this.internalEventBus.once('timeupdate', (data) => {
+      adToRun.linear.tracker.trackImpression();
+      adToRun.linear.tracker.overlayViewDuration(data.currentTime);
+    });
+
+    // Track when user closes the video
+    window.onbeforeunload = () => {
+      adToRun.linear.tracker.close();
+      return null;
+    };
 
     // Retrieve the media file from the VAST manifest
     const mediaFile = Vast.getBestMediaFile(adToRun.linear.mediaFiles);
