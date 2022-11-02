@@ -13,6 +13,10 @@ class Vast extends Plugin {
     this.player = player;
     this.options = options;
 
+    this.macros = {
+      LIMITADTRACKING: options.isLimitedTracking !== undefined ? options.isLimitedTracking : false, // defaults to false
+    }
+
     this.internalEventBus = new EventEmitter();
 
     // Bind events that will be triggered by the player and that we cannot subscribe to later (bug on vjs side)
@@ -67,7 +71,6 @@ class Vast extends Plugin {
           // manually trigger time event as native timeupdate is not triggered enough
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           global[`timeUpdateInterval_${this.id}`] = setInterval(() => {
-              console.info({ position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() })
               player.trigger('vast.time', { position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() });
           }, 100);
         });
@@ -132,53 +135,53 @@ class Vast extends Plugin {
   playLinearAd(adToRun) {
     // Track the impression of an ad 
     this.player.one('adplaying', () => {
-      adToRun.linear.tracker.load();
+      adToRun.linear.tracker.load(this.macros);
     });
 
     // Track the end of an ad
     this.player.one('adended', () => {
-      adToRun.linear.tracker.complete();
+      adToRun.linear.tracker.complete(this.macros);
     });
 
     // Track when a user clicks on an ad
     this.player.one('vast.click', () => {
-      adToRun.linear.tracker.click();
+      adToRun.linear.tracker.click(null, this.macros);
     });
 
     // Track the video entering or leaving fullscreen
     this.player.one('fullscreen', (evt, data) => {
-      adToRun.linear.tracker.setFullscreen(data.state);
+      adToRun.linear.tracker.setFullscreen(data.state, this.macros);
     });
 
     // Track the user muting or unmuting the video
     this.player.one('mute', (evt, data) => {
-      adToRun.linear.tracker.setFullscreen(data.state);
+      adToRun.linear.tracker.setFullscreen(data.state, this.macros);
     });
     
     // Track play event
     this.internalEventBus.on('play', () => {
-      adToRun.linear.tracker.setPaused(false);
+      adToRun.linear.tracker.setPaused(false, this.macros);
     });
 
     // Track pause event
     this.internalEventBus.on('pause', () => {
-      adToRun.linear.tracker.setPaused(true);
+      adToRun.linear.tracker.setPaused(true, this.macros);
     });
 
     // Track timeupdate event
     this.internalEventBus.on('timeupdate', (data) => {
-      adToRun.linear.tracker.setProgress(data.currentTime);
+      adToRun.linear.tracker.setProgress(data.currentTime, this.macros);
     });
 
     // Track the first timeupdate event - used for impression tracking
     this.internalEventBus.once('timeupdate', (data) => {
-      adToRun.linear.tracker.trackImpression();
-      adToRun.linear.tracker.overlayViewDuration(data.currentTime);
+      adToRun.linear.tracker.trackImpression(this.macros);
+      adToRun.linear.tracker.overlayViewDuration(data.currentTime, this.macros);
     });
 
     // Track when user closes the video
     window.onbeforeunload = () => {
-      adToRun.linear.tracker.close();
+      adToRun.linear.tracker.close(this.macros);
       return null;
     };
 
