@@ -4,6 +4,17 @@ import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
 import { EventEmitter } from 'events';
 
+// Inject script tag in the DOM and callback when ready
+function injectScriptTag(src, onLoadCallback, onErrorCallback) {
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = src;
+  script.async = true;
+  script.onload = onLoadCallback;
+  script.onerror = onErrorCallback;
+  document.body.appendChild(script);
+}
+
 const Plugin = videojs.getPlugin('plugin');
 
 class Vast extends Plugin {
@@ -11,7 +22,10 @@ class Vast extends Plugin {
     super(player, options);
 
     this.player = player;
-    this.options = options;
+    this.options = {
+      vastUrl: options.vastUrl !== undefined ? options.vastUrl : false,
+      verificationTimeout: options.verificationTimeout !== undefined ? options.verificationTimeout : 2000
+    };
 
     this.macros = {
       LIMITADTRACKING: options.isLimitedTracking !== undefined ? options.isLimitedTracking : false, // defaults to false
@@ -86,17 +100,46 @@ class Vast extends Plugin {
           player.trigger('vast.complete');
         });
 
-        // If ad has a linear copy, then execute this
-        if(adToRun.linear) {
-          this.playLinearAd(adToRun);
-        }
+        const playAd = (adToRun) => {
+          // If ad has a linear copy, then execute this
+          if(adToRun.linear) {
+            this.playLinearAd(adToRun);
+          }
 
-        // Other types of ads should come here....
-        // Please be aware that a single ad can have multple types of creatives
-        // A linear add for example can come with a companion ad and both can should be displayed. Example:
-        // if(adToRun.comanionAd) {
-        //   renderCompanionBannerSomewhere();
-        // }
+          // Other types of ads should come here....
+          // Please be aware that a single ad can have multple types of creatives
+          // A linear add for example can come with a companion ad and both can should be displayed. Example:
+          // if(adToRun.comanionAd) {
+          //   renderCompanionBannerSomewhere();
+          // }
+        }
+        
+        if ('verification' in adToRun && adToRun.verification.length > 0) {
+          // Set a timeout for the verification script - accortding to the IAB spec, we should do
+          // a best effort to load the verification script before the actual ad, but it should not
+          // block the ad nor the video playback
+          const verificationTimeout = setTimeout(() => {
+            playAd(adToRun);
+          }, this.options.verificationTimeout);
+
+          // Now for each verification script, we need to inject a script tag in the DOM and wait
+          // for it to load
+          let index = 0;
+          const scriptTagCallback = () => {
+            index = index + 1;
+            if (index < adToRun.verification.length) {
+              injectScriptTag(adToRun.verification[index].resource, scriptTagCallback, scriptTagCallback);    
+            } else {
+              // Once we are done with all verification tags, clear the timeout timer and play the ad
+              clearTimeout(verificationTimeout);
+              playAd(adToRun);
+            }
+          };
+          injectScriptTag(adToRun.verification[index].resource, scriptTagCallback, scriptTagCallback);
+        } else {
+          // No verification to import, just run the add
+          playAd(adToRun);
+        }
 
       }
     });
@@ -246,6 +289,7 @@ class Vast extends Plugin {
     const nextAd = {
       linear: false,
       companion: false,
+      verification: [],
     };
 
     // Pop an ad from array of ads available
@@ -253,6 +297,10 @@ class Vast extends Plugin {
 
     // Separate the kinds of creatives we have in the ad to play
     if (adToPlay && adToPlay.creatives && adToPlay.creatives.length > 0) {
+      if ('adVerifications' in adToPlay) {
+        nextAd.verification = adToPlay.adVerifications;
+      }
+
       for (let index = 0; index < adToPlay.creatives.length; index += 1) {
         const creative = adToPlay.creatives[index];
         switch (creative.type) {
