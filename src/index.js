@@ -26,6 +26,11 @@ class Vast extends Plugin {
       this.internalEventBus.emit('timeupdate', { currentTime: player.currentTime() });
     });
 
+    // Track the user muting or unmuting the video
+    player.on('volumechange', (evt, data) => {
+      this.internalEventBus.emit('mute', { state: this.player.muted() });
+    });
+
     // Init a property in the player object to keep track of the ad state
     player.isAd = true;
 
@@ -154,8 +159,8 @@ class Vast extends Plugin {
     });
 
     // Track the user muting or unmuting the video
-    this.player.one('mute', (evt, data) => {
-      adToRun.linear.tracker.setFullscreen(data.state, this.macros);
+    this.internalEventBus.on('mute', (data) => {
+      adToRun.linear.tracker.setMuted(data.state, this.macros);
     });
     
     // Track play event
