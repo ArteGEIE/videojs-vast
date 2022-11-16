@@ -22,6 +22,9 @@ class Vast extends Plugin {
     // Bind events that will be triggered by the player and that we cannot subscribe to later (bug on vjs side)
     player.on('play', () => { this.internalEventBus.emit('play'); });
     player.on('pause', () => { this.internalEventBus.emit('pause'); });
+    player.on('skip', (evt, data) => {
+      this.internalEventBus.emit('skip');
+    });
     player.on('timeupdate', (evt, data) => {
       this.internalEventBus.emit('timeupdate', { currentTime: player.currentTime() });
     });
@@ -65,6 +68,7 @@ class Vast extends Plugin {
           // Trigger an event to notify the player consumer that the ad is playing
           player.trigger('vast.play', {
             ctaUrl,
+            skipDelay: adToRun.linear.tracker.skipDelay,
             adClickCallback: ctaUrl ? () => this.adClickCallback(ctaUrl) : false,
           });
 
@@ -84,6 +88,17 @@ class Vast extends Plugin {
           // stop emitting vast.time
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.complete');
+        });
+
+        // send event when ad is skipped to resume content
+        player.one('skip', () => {
+          // Finish ad mode so that regular content can resume
+          player.ads.endLinearAdMode();
+          // Trigger an event when the ad is finished to notify the player consumer
+          player.isAd = false;
+          // stop emitting vast.time
+          clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
+          player.trigger('vast.skip');
         });
 
         // If ad has a linear copy, then execute this
@@ -133,7 +148,7 @@ class Vast extends Plugin {
   * This method is responsible for rendering a linear ad
   */
   playLinearAd(adToRun) {
-    // Track the impression of an ad 
+    // Track the impression of an ad
     this.player.one('adplaying', () => {
       adToRun.linear.tracker.load(this.macros);
     });
@@ -148,6 +163,11 @@ class Vast extends Plugin {
       adToRun.linear.tracker.click(null, this.macros);
     });
 
+    // Track skip event
+    this.internalEventBus.on('vast.skip', () => {
+      adToRun.linear.tracker.skip(this.macros);
+    });
+
     // Track the video entering or leaving fullscreen
     this.player.one('fullscreen', (evt, data) => {
       adToRun.linear.tracker.setFullscreen(data.state, this.macros);
@@ -157,7 +177,7 @@ class Vast extends Plugin {
     this.player.one('mute', (evt, data) => {
       adToRun.linear.tracker.setFullscreen(data.state, this.macros);
     });
-    
+
     // Track play event
     this.internalEventBus.on('play', () => {
       adToRun.linear.tracker.setPaused(false, this.macros);
@@ -199,7 +219,7 @@ class Vast extends Plugin {
 
     // play linear ad content
     this.player.src(mediaFile.fileURL);
-    
+
   }
 
   /*
@@ -236,7 +256,7 @@ class Vast extends Plugin {
   }
 
   /*
-  * This method is responsible for retrieving the next ad to play from all the ads present in the 
+  * This method is responsible for retrieving the next ad to play from all the ads present in the
   * VAST manifest.
   * Please be aware that a single ad can have multple types of creatives.
   * A linear add for example can come with a companion ad and both can should be displayed.
@@ -250,7 +270,6 @@ class Vast extends Plugin {
 
     // Pop an ad from array of ads available
     const adToPlay = this.ads.pop();
-
     // Separate the kinds of creatives we have in the ad to play
     if (adToPlay && adToPlay.creatives && adToPlay.creatives.length > 0) {
       for (let index = 0; index < adToPlay.creatives.length; index += 1) {
