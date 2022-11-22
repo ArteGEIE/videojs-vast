@@ -37,7 +37,7 @@ class Vast extends Plugin {
 
     const videojsContribAdsOptions = {
       timeout: 5000, // TO BE DONE - This should be an option
-      debug: true, // TO BE DONE - This should be environment specific and/or an option
+      debug: options.debug !== undefined ? options.debug : false,
     };
     player.ads(videojsContribAdsOptions); // initialize videojs-contrib-ads
 
