@@ -36,11 +36,10 @@ class Vast extends Plugin {
     this.id = Vast.getRandomId()
 
     const videojsContribAdsOptions = {
-      timeout: 5000, // TO BE DONE - This should be an option
+      timeout: options.timeout !== undefined ? options.timeout : 5000,
       debug: true, // TO BE DONE - This should be environment specific and/or an option
     };
     player.ads(videojsContribAdsOptions); // initialize videojs-contrib-ads
-
 
     player.on('readyforpreroll', () => {
       const adToRun = this.getNextAd();
@@ -99,6 +98,16 @@ class Vast extends Plugin {
         // }
 
       }
+    });
+
+    // If we reach the timeout while trying to load the VAST, then we trigger an error event
+    player.on('adtimeout', () => {
+      const message = 'VastVjs: Timeout';
+      console.error(message);
+      console.error(err);
+      player.trigger('vast.error', {
+        message
+      });
     });
 
     // Now let's fetch some ads shall we?
