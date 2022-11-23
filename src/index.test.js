@@ -44,7 +44,7 @@ test('Plugin must have attached the necessary event listeners', async () => {
 
   const vastInstance = new Vast(player, options);
   
-  expect(player.on).toHaveBeenCalledTimes(5);
+  expect(player.on).toHaveBeenCalledTimes(4);
 });
 
 test('Plugin must init linear ad mode and update the videojs source URL with the ad copy', async () => {
