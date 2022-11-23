@@ -22,6 +22,9 @@ export default class Vast extends Plugin {
     // Bind events that will be triggered by the player and that we cannot subscribe to later (bug on vjs side)
     player.on('play', () => { this.internalEventBus.emit('play'); });
     player.on('pause', () => { this.internalEventBus.emit('pause'); });
+    player.on('skip', (evt, data) => {
+      this.internalEventBus.emit('skip');
+    });
     player.on('timeupdate', (evt, data) => {
       this.internalEventBus.emit('timeupdate', { currentTime: player.currentTime() });
     });
@@ -64,6 +67,7 @@ export default class Vast extends Plugin {
           // Trigger an event to notify the player consumer that the ad is playing
           player.trigger('vast.play', {
             ctaUrl,
+            skipDelay: adToRun.linear.tracker.skipDelay,
             adClickCallback: ctaUrl ? () => this.adClickCallback(ctaUrl) : false,
           });
 
@@ -83,6 +87,17 @@ export default class Vast extends Plugin {
           // stop emitting vast.time
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.complete');
+        });
+
+        // send event when ad is skipped to resume content
+        player.one('skip', () => {
+          // Finish ad mode so that regular content can resume
+          player.ads.endLinearAdMode();
+          // Trigger an event when the ad is finished to notify the player consumer
+          player.isAd = false;
+          // stop emitting vast.time
+          clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
+          player.trigger('vast.skip');
         });
 
         // If ad has a linear copy, then execute this
@@ -153,6 +168,11 @@ export default class Vast extends Plugin {
     // Track when a user clicks on an ad
     this.player.one('vast.click', () => {
       adToRun.linear.tracker.click(null, this.macros);
+    });
+
+    // Track skip event
+    this.internalEventBus.on('vast.skip', () => {
+      adToRun.linear.tracker.skip(this.macros);
     });
 
     // Track the video entering or leaving fullscreen
@@ -273,7 +293,6 @@ export default class Vast extends Plugin {
 
     // Pop an ad from array of ads available
     const adToPlay = this.ads.pop();
-
     // Separate the kinds of creatives we have in the ad to play
     if (adToPlay && adToPlay.creatives && adToPlay.creatives.length > 0) {
       for (let index = 0; index < adToPlay.creatives.length; index += 1) {
