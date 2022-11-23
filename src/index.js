@@ -140,7 +140,7 @@ export default class Vast extends Plugin {
   * This method is responsible for rendering a linear ad
   */
   playLinearAd(adToRun) {
-    // Track the impression of an ad 
+    // Track the impression of an ad
     this.player.one('adplaying', () => {
       adToRun.linear.tracker.load(this.macros);
     });
@@ -164,7 +164,7 @@ export default class Vast extends Plugin {
     this.player.one('mute', (evt, data) => {
       adToRun.linear.tracker.setFullscreen(data.state, this.macros);
     });
-    
+
     // Track play event
     this.internalEventBus.on('play', () => {
       adToRun.linear.tracker.setPaused(false, this.macros);
@@ -206,7 +206,6 @@ export default class Vast extends Plugin {
 
     // play linear ad content
     this.player.src(mediaFile.fileURL);
-    
   }
 
   /*
@@ -214,8 +213,25 @@ export default class Vast extends Plugin {
   * screen resolution and internet connection speed
   */
   static getBestMediaFile(mediaFilesAvailable) {
-    // TO BE DONE - select the best media file based on internet bandwidth and screen size/resolution
-    return mediaFilesAvailable[0];
+    // select the best media file based on internet bandwidth and screen size/resolution
+    const videojsVhs = localStorage.getItem('videojs-vhs')
+    const bandwidth = videojsVhs ? JSON.parse(videojsVhs).bandwidth : undefined
+
+    let bestMediaFile = mediaFilesAvailable[0];
+
+    if (mediaFilesAvailable && bandwidth) {
+      const height = window.screen.height;
+      const width = window.screen.width;
+
+      const result = mediaFilesAvailable
+        .sort((a, b) => ((Math.abs(a.bitrate - bandwidth) - Math.abs(b.bitrate - bandwidth))
+          || (Math.abs(a.width - width) - Math.abs(b.width - width))
+          || (Math.abs(a.height - height) - Math.abs(b.height - height))))
+
+      bestMediaFile = result[0]
+    }
+
+    return bestMediaFile;
   }
 
   /*
@@ -243,7 +259,7 @@ export default class Vast extends Plugin {
   }
 
   /*
-  * This method is responsible for retrieving the next ad to play from all the ads present in the 
+  * This method is responsible for retrieving the next ad to play from all the ads present in the
   * VAST manifest.
   * Please be aware that a single ad can have multple types of creatives.
   * A linear add for example can come with a companion ad and both can should be displayed.
