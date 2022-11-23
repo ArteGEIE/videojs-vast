@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 
 const Plugin = videojs.getPlugin('plugin');
 
-class Vast extends Plugin {
+export default class Vast extends Plugin {
   constructor(player, options) {
     super(player, options);
 
@@ -39,11 +39,10 @@ class Vast extends Plugin {
     this.id = Vast.getRandomId()
 
     const videojsContribAdsOptions = {
-      timeout: 5000, // TO BE DONE - This should be an option
+      timeout: options.timeout !== undefined ? options.timeout : 5000,
       debug: true, // TO BE DONE - This should be environment specific and/or an option
     };
     player.ads(videojsContribAdsOptions); // initialize videojs-contrib-ads
-
 
     player.on('readyforpreroll', () => {
       const adToRun = this.getNextAd();
@@ -116,6 +115,16 @@ class Vast extends Plugin {
       }
     });
 
+    // If we reach the timeout while trying to load the VAST, then we trigger an error event
+    player.on('adtimeout', () => {
+      const message = 'VastVjs: Timeout';
+      console.error(message);
+      console.error(err);
+      player.trigger('vast.error', {
+        message
+      });
+    });
+
     // Now let's fetch some ads shall we?
     this.vastClient = new VASTClient();
     this.vastClient.get(options.vastUrl)
@@ -127,8 +136,6 @@ class Vast extends Plugin {
     .catch((err) => {
       // Deal with the error
       const message = 'VastVjs: Error while fetching VAST XML';
-      console.error(message);
-      console.error(err);
       player.trigger('vast.error', {
         message,
         tag: options.vastUrl,
@@ -219,7 +226,6 @@ class Vast extends Plugin {
 
     // play linear ad content
     this.player.src(mediaFile.fileURL);
-
   }
 
   /*
@@ -227,8 +233,25 @@ class Vast extends Plugin {
   * screen resolution and internet connection speed
   */
   static getBestMediaFile(mediaFilesAvailable) {
-    // TO BE DONE - select the best media file based on internet bandwidth and screen size/resolution
-    return mediaFilesAvailable[0];
+    // select the best media file based on internet bandwidth and screen size/resolution
+    const videojsVhs = localStorage.getItem('videojs-vhs')
+    const bandwidth = videojsVhs ? JSON.parse(videojsVhs).bandwidth : undefined
+
+    let bestMediaFile = mediaFilesAvailable[0];
+
+    if (mediaFilesAvailable && bandwidth) {
+      const height = window.screen.height;
+      const width = window.screen.width;
+
+      const result = mediaFilesAvailable
+        .sort((a, b) => ((Math.abs(a.bitrate - bandwidth) - Math.abs(b.bitrate - bandwidth))
+          || (Math.abs(a.width - width) - Math.abs(b.width - width))
+          || (Math.abs(a.height - height) - Math.abs(b.height - height))))
+
+      bestMediaFile = result[0]
+    }
+
+    return bestMediaFile;
   }
 
   /*
