@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 
 const Plugin = videojs.getPlugin('plugin');
 
-class Vast extends Plugin {
+export default class Vast extends Plugin {
   constructor(player, options) {
     super(player, options);
 
@@ -121,8 +121,6 @@ class Vast extends Plugin {
     .catch((err) => {
       // Deal with the error
       const message = 'VastVjs: Error while fetching VAST XML';
-      console.error(message);
-      console.error(err);
       player.trigger('vast.error', {
         message,
         tag: options.vastUrl,
