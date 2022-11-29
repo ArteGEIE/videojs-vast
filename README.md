@@ -27,7 +27,7 @@ Table of contents
 
 #### Getting Started
 
-In order to start using the VAST Plugin you are supposed to have started a project that consumes VideosJS and have some basic knowledge of its basica concepts and API. To get started, install and include this package in your project's dependencies using npm or yarn:
+In order to start using the VAST Plugin you are supposed to have started a project that consumes VideosJS and have some basic knowledge of its basic concepts and API. To get started, install and include this package in your project's dependencies using npm or yarn:
 
 ```
 npm install --save @arte/videojs-vast-plugin
@@ -78,7 +78,7 @@ videojsInstance.trigger('adClicked');
 This plugin currently supports a handful of options that might help you customize it to your needs. Below you can find a description of the options supported to this date. Please bear in mind this is a work in progress and more options should be available in the future, especially if requested through this repository.
 
 * **vastURL** (string - required) - The URL where the plugin will fetch the VAST manifest from. The 
-* **isLimitedTracking** (boolean) - ACcording to the Vast [documentation](https://interactiveadvertisingbureau.github.io/vast/vast4macros/vast4-macros-latest.html#macro-spec-limitadtracking), relates to the LIMITADTRACKING macro
+* **isLimitedTracking** (boolean) - According to the Vast [documentation](https://interactiveadvertisingbureau.github.io/vast/vast4macros/vast4-macros-latest.html#macro-spec-limitadtracking), relates to the LIMITADTRACKING macro
 * **timeout** (milliseconds - int) - Max amount of time the plugin should wait for the manifest URL to respond and the assets to load. Will throw an error if this value is exceeded.
 * **debug** (boolean) - Display detailed logging in the browser console.
 
