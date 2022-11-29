@@ -22,10 +22,15 @@ class Vast extends Plugin {
     super(player, options);
 
     this.player = player;
+
+    // Load the options with default values
     this.options = {
-      vastUrl: options.vastUrl !== undefined ? options.vastUrl : false,
-      verificationTimeout: options.verificationTimeout !== undefined ? options.verificationTimeout : 2000
-    };
+      vastUrl: false,
+      verificationTimeout: 2000,
+    }
+
+    // Assign options that were passed in by the consumer
+    Object.assign(this.options, options);
 
     this.macros = {
       LIMITADTRACKING: options.isLimitedTracking !== undefined ? options.isLimitedTracking : false, // defaults to false
@@ -100,6 +105,8 @@ class Vast extends Plugin {
           player.trigger('vast.complete');
         });
 
+        // Declare a function that simply plays an ad, we will call it once we check if
+        // verification is needed or not
         const playAd = (adToRun) => {
           // If ad has a linear copy, then execute this
           if(adToRun.linear) {
@@ -114,6 +121,9 @@ class Vast extends Plugin {
           // }
         }
         
+        // We now check if verification is needed or not, if it is, then we import the
+        // verification script with a timeout trigger. If it is not, then we simply display the ad
+        // by calling playAd
         if ('verification' in adToRun && adToRun.verification.length > 0) {
           // Set a timeout for the verification script - accortding to the IAB spec, we should do
           // a best effort to load the verification script before the actual ad, but it should not
