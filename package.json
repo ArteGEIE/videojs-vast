@@ -34,7 +34,8 @@
     "build": "yarn bundle",
     "start": "watch --interval=1 'yarn bundle:local' ./src/",
     "postinstall": "yarn global add yalc",
-    "test": "jest --coverage"
+    "test": "jest --coverage",
+    "prepublishOnly": "yarn test; yarn build"
   },
   "dependencies": {
     "@dailymotion/vast-client": "^4.0.0",
