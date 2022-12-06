@@ -17,7 +17,7 @@ function injectScriptTag(src, onLoadCallback, onErrorCallback) {
 
 const Plugin = videojs.getPlugin('plugin');
 
-class Vast extends Plugin {
+export default class Vast extends Plugin {
   constructor(player, options) {
     super(player, options);
 
@@ -41,8 +41,16 @@ class Vast extends Plugin {
     // Bind events that will be triggered by the player and that we cannot subscribe to later (bug on vjs side)
     player.on('play', () => { this.internalEventBus.emit('play'); });
     player.on('pause', () => { this.internalEventBus.emit('pause'); });
+    player.on('skip', (evt, data) => {
+      this.internalEventBus.emit('skip');
+    });
     player.on('timeupdate', (evt, data) => {
       this.internalEventBus.emit('timeupdate', { currentTime: player.currentTime() });
+    });
+
+    // Track the user muting or unmuting the video
+    player.on('volumechange', (evt, data) => {
+      this.internalEventBus.emit('mute', { state: this.player.muted() });
     });
 
     // Init a property in the player object to keep track of the ad state
@@ -55,11 +63,10 @@ class Vast extends Plugin {
     this.id = Vast.getRandomId()
 
     const videojsContribAdsOptions = {
-      timeout: 5000, // TO BE DONE - This should be an option
-      debug: true, // TO BE DONE - This should be environment specific and/or an option
+      debug: options.debug !== undefined ? options.debug : false,
+      timeout: options.timeout !== undefined ? options.timeout : 5000,
     };
     player.ads(videojsContribAdsOptions); // initialize videojs-contrib-ads
-
 
     player.on('readyforpreroll', () => {
       const adToRun = this.getNextAd();
@@ -84,6 +91,7 @@ class Vast extends Plugin {
           // Trigger an event to notify the player consumer that the ad is playing
           player.trigger('vast.play', {
             ctaUrl,
+            skipDelay: adToRun.linear.tracker.skipDelay,
             adClickCallback: ctaUrl ? () => this.adClickCallback(ctaUrl) : false,
           });
 
@@ -103,6 +111,17 @@ class Vast extends Plugin {
           // stop emitting vast.time
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.complete');
+        });
+
+        // send event when ad is skipped to resume content
+        player.one('skip', () => {
+          // Finish ad mode so that regular content can resume
+          player.ads.endLinearAdMode();
+          // Trigger an event when the ad is finished to notify the player consumer
+          player.isAd = false;
+          // stop emitting vast.time
+          clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
+          player.trigger('vast.skip');
         });
 
         // Declare a function that simply plays an ad, we will call it once we check if
@@ -154,6 +173,16 @@ class Vast extends Plugin {
       }
     });
 
+    // If we reach the timeout while trying to load the VAST, then we trigger an error event
+    player.on('adtimeout', () => {
+      const message = 'VastVjs: Timeout';
+      console.error(message);
+      console.error(err);
+      player.trigger('vast.error', {
+        message
+      });
+    });
+
     // Now let's fetch some ads shall we?
     this.vastClient = new VASTClient();
     this.vastClient.get(options.vastUrl)
@@ -165,8 +194,6 @@ class Vast extends Plugin {
     .catch((err) => {
       // Deal with the error
       const message = 'VastVjs: Error while fetching VAST XML';
-      console.error(message);
-      console.error(err);
       player.trigger('vast.error', {
         message,
         tag: options.vastUrl,
@@ -186,7 +213,7 @@ class Vast extends Plugin {
   * This method is responsible for rendering a linear ad
   */
   playLinearAd(adToRun) {
-    // Track the impression of an ad 
+    // Track the impression of an ad
     this.player.one('adplaying', () => {
       adToRun.linear.tracker.load(this.macros);
     });
@@ -201,16 +228,21 @@ class Vast extends Plugin {
       adToRun.linear.tracker.click(null, this.macros);
     });
 
+    // Track skip event
+    this.internalEventBus.on('vast.skip', () => {
+      adToRun.linear.tracker.skip(this.macros);
+    });
+
     // Track the video entering or leaving fullscreen
     this.player.one('fullscreen', (evt, data) => {
       adToRun.linear.tracker.setFullscreen(data.state, this.macros);
     });
 
     // Track the user muting or unmuting the video
-    this.player.one('mute', (evt, data) => {
-      adToRun.linear.tracker.setFullscreen(data.state, this.macros);
+    this.internalEventBus.on('mute', (data) => {
+      adToRun.linear.tracker.setMuted(data.state, this.macros);
     });
-    
+
     // Track play event
     this.internalEventBus.on('play', () => {
       adToRun.linear.tracker.setPaused(false, this.macros);
@@ -252,7 +284,6 @@ class Vast extends Plugin {
 
     // play linear ad content
     this.player.src(mediaFile.fileURL);
-    
   }
 
   /*
@@ -260,8 +291,25 @@ class Vast extends Plugin {
   * screen resolution and internet connection speed
   */
   static getBestMediaFile(mediaFilesAvailable) {
-    // TO BE DONE - select the best media file based on internet bandwidth and screen size/resolution
-    return mediaFilesAvailable[0];
+    // select the best media file based on internet bandwidth and screen size/resolution
+    const videojsVhs = localStorage.getItem('videojs-vhs')
+    const bandwidth = videojsVhs ? JSON.parse(videojsVhs).bandwidth : undefined
+
+    let bestMediaFile = mediaFilesAvailable[0];
+
+    if (mediaFilesAvailable && bandwidth) {
+      const height = window.screen.height;
+      const width = window.screen.width;
+
+      const result = mediaFilesAvailable
+        .sort((a, b) => ((Math.abs(a.bitrate - bandwidth) - Math.abs(b.bitrate - bandwidth))
+          || (Math.abs(a.width - width) - Math.abs(b.width - width))
+          || (Math.abs(a.height - height) - Math.abs(b.height - height))))
+
+      bestMediaFile = result[0]
+    }
+
+    return bestMediaFile;
   }
 
   /*
@@ -289,7 +337,7 @@ class Vast extends Plugin {
   }
 
   /*
-  * This method is responsible for retrieving the next ad to play from all the ads present in the 
+  * This method is responsible for retrieving the next ad to play from all the ads present in the
   * VAST manifest.
   * Please be aware that a single ad can have multple types of creatives.
   * A linear add for example can come with a companion ad and both can should be displayed.
@@ -304,7 +352,6 @@ class Vast extends Plugin {
 
     // Pop an ad from array of ads available
     const adToPlay = this.ads.pop();
-
     // Separate the kinds of creatives we have in the ad to play
     if (adToPlay && adToPlay.creatives && adToPlay.creatives.length > 0) {
       if ('adVerifications' in adToPlay) {
