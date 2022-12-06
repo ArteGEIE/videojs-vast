@@ -39,8 +39,8 @@ export default class Vast extends Plugin {
     this.id = Vast.getRandomId()
 
     const videojsContribAdsOptions = {
+      debug: options.debug !== undefined ? options.debug : false,
       timeout: options.timeout !== undefined ? options.timeout : 5000,
-      debug: true, // TO BE DONE - This should be environment specific and/or an option
     };
     player.ads(videojsContribAdsOptions); // initialize videojs-contrib-ads
 
