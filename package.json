@@ -51,5 +51,18 @@
     "regenerator-runtime": "^0.13.7",
     "ts-jest": "^29.0.3",
     "watch": "^1.0.2"
-  }
+  },
+  "description": "Open Source VAST plugin for VideoJS",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArteGEIE/videojs-vast.git"
+  },
+  "keywords": [
+    "vast"
+  ],
+  "author": "ARTE",
+  "bugs": {
+    "url": "https://github.com/ArteGEIE/videojs-vast/issues"
+  },
+  "homepage": "https://github.com/ArteGEIE/videojs-vast#readme"
 }
