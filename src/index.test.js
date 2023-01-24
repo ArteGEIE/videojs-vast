@@ -70,7 +70,7 @@ test('Plugin must init linear ad mode and update the videojs source URL with the
   eventBus.emit('readyforpreroll');
   await new Promise((r) => setTimeout(r, 2400));
   expect(player.ads.startLinearAdMode).toHaveBeenCalled();
-  expect(player.src).toHaveBeenCalledWith('https://static-cdn.arte.tv/static/artevpv7/vast/preroll.mp4');
+  expect(player.src).toHaveBeenCalledWith('https://www.arte.tv/static/artevpv7/vast/preroll.mp4');
   expect(player.trigger).toHaveBeenCalledWith('vast.playAttempt');
 });
 

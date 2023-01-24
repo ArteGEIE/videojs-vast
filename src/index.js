@@ -37,6 +37,7 @@ export default class Vast extends Plugin {
     }
 
     this.internalEventBus = new EventEmitter();
+    this.throttleTimeout = false;
 
     // Bind events that will be triggered by the player and that we cannot subscribe to later (bug on vjs side)
     player.on('play', () => { this.internalEventBus.emit('play'); });
@@ -175,15 +176,16 @@ export default class Vast extends Plugin {
 
     // If we reach the timeout while trying to load the VAST, then we trigger an error event
     player.on('adtimeout', () => {
-      const message = 'VastVjs: Timeout';
-      console.error(message);
-      console.error(err);
-      player.trigger('vast.error', {
-        message
-      });
+      if (!this.throttleTimeout) {
+        console.error('VastVjs: Timeout');
+        player.trigger('vast.error', {
+          message: 'VastVjs: Timeout',
+        });
+      }
+      this.throttleTimeout = false;
     });
 
-    // Now let's fetch some ads shall we?
+    // Now let's fetch some ads
     this.vastClient = new VASTClient();
     this.vastClient.get(options.vastUrl)
     .then((res) => {
@@ -192,6 +194,7 @@ export default class Vast extends Plugin {
       player.trigger('adsready');
     })
     .catch((err) => {
+      this.throttleTimeout = true;
       // Deal with the error
       const message = 'VastVjs: Error while fetching VAST XML';
       player.trigger('vast.error', {
