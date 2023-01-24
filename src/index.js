@@ -189,9 +189,18 @@ export default class Vast extends Plugin {
     this.vastClient = new VASTClient();
     this.vastClient.get(options.vastUrl)
     .then((res) => {
-      // Once we are done, trigger adsready event so that we can render a preroll
-      this.ads = res.ads;
-      player.trigger('adsready');
+      if (res.includes('ads') && res.ads.length) {
+        // Once we are done, trigger adsready event so that we can render a preroll
+        this.ads = res.ads;
+        player.trigger('adsready');
+      } else {
+      // Deal with the error
+      const message = 'VastVjs: Empty VAST XML';
+      player.trigger('vast.error', {
+        message,
+        tag: options.vastUrl,
+      });
+      }
     })
     .catch((err) => {
       this.throttleTimeout = true;
