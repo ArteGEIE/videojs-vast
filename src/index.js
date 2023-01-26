@@ -80,6 +80,10 @@ export default class Vast extends Plugin {
         }
 
         player.on('adserror', (evt) => {
+          // Finish ad mode so that regular content can resume
+          player.ads.endLinearAdMode();
+          // Trigger an event when the ad is finished to notify the player consumer
+          player.isAd = false;
           console.error(evt);
           player.trigger('vast.error', {
             message: evt,
@@ -98,7 +102,7 @@ export default class Vast extends Plugin {
 
           // manually trigger time event as native timeupdate is not triggered enough
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
-          global[`timeUpdateInterval_${this.id}`] = setInterval(() => {
+          global[`vastTimeUpdateInterval_${this.id}`] = setInterval(() => {
               player.trigger('vast.time', { position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() });
           }, 100);
         });
@@ -174,7 +178,7 @@ export default class Vast extends Plugin {
       }
     });
 
-    // If we reach the timeout while trying to load the VAST, then we trigger an error event
+    // Notify the player if we reach a timeout while trying to load the ad
     player.on('adtimeout', () => {
       if (!this.throttleTimeout) {
         console.error('VastVjs: Timeout');
@@ -194,15 +198,18 @@ export default class Vast extends Plugin {
         this.ads = res.ads;
         player.trigger('adsready');
       } else {
-      // Deal with the error
-      const message = 'VastVjs: Empty VAST XML';
-      player.trigger('vast.error', {
-        message,
-        tag: options.vastUrl,
-      });
+        player.ads.skipLinearAdMode();
+        // Deal with the error
+        this.throttleTimeout = true;
+        const message = 'VastVjs: Empty VAST XML';
+        player.trigger('vast.error', {
+          message,
+          tag: options.vastUrl,
+        });
       }
     })
     .catch((err) => {
+      player.ads.skipLinearAdMode();
       this.throttleTimeout = true;
       // Deal with the error
       const message = 'VastVjs: Error while fetching VAST XML';
