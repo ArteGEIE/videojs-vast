@@ -189,7 +189,7 @@ export default class Vast extends Plugin {
     this.vastClient = new VASTClient();
     this.vastClient.get(options.vastUrl)
     .then((res) => {
-      if (res.includes('ads') && res.ads.length) {
+      if ('ads' in res && res.ads.length) {
         // Once we are done, trigger adsready event so that we can render a preroll
         this.ads = res.ads;
         player.trigger('adsready');
