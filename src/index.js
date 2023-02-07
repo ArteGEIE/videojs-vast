@@ -272,8 +272,21 @@ export default class Vast extends Plugin {
       adToRun.linear.tracker.setPaused(true, this.macros);
     });
 
-    // Track timeupdate event
+    // Track timeupdate-related events
+    this.quartileTracked = false;
+    this.halfTracked = false;
     this.internalEventBus.on('timeupdate', (data) => {
+      // Track the first quartile event
+      if (!this.quartileTracked && data.currentTime > this.player.duration() / 4) {
+        adToRun.linear.tracker.track('firstQuartile', this.macros);
+        this.quartileTracked = true;
+      }
+      // Track the midpoint event
+      if (!this.halfTracked && data.currentTime > this.player.duration() / 2) {
+        adToRun.linear.tracker.track('midpoint', this.macros);
+        this.halfTracked = true;
+      }
+      // Set progress to track automated trackign events
       adToRun.linear.tracker.setProgress(data.currentTime, this.macros);
     });
 

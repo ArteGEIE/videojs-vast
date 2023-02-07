@@ -1,6 +1,6 @@
 {
   "name": "@arte/videojs-vast",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "main": "./dist/cjs/index.js",
   "module": "./dist/mjs/index.js",
   "license": "MIT",
