@@ -39,24 +39,22 @@ export default class Vast extends Plugin {
     this.internalEventBus = new EventEmitter();
     this.throttleTimeout = false;
 
-    // Bind events that will be triggered by the player and that we cannot subscribe to later (bug on vjs side)
-    player.on('play', () => { this.internalEventBus.emit('play'); });
-    player.on('pause', () => { this.internalEventBus.emit('pause'); });
-    player.on('skip', (evt, data) => {
+    this.listenToPlay = () => { this.internalEventBus.emit('play'); }
+    this.listenToPause = () => { this.internalEventBus.emit('pause'); }
+    this.listenToTimeUpdate = () => {
+      this.internalEventBus.emit('timeupdate', { currentTime: this.player.currentTime() });
+    }
+    this.listenToSkip = () => {
       this.internalEventBus.emit('skip');
-    });
-    player.on('timeupdate', (evt, data) => {
-      this.internalEventBus.emit('timeupdate', { currentTime: player.currentTime() });
-    });
-
-    // Track the user muting or unmuting the video
-    player.on('volumechange', (evt, data) => {
+    }
+    this.listenToVolumeChange = () => {
       this.internalEventBus.emit('mute', { state: this.player.muted() });
-    });
+    }
+
+    this.addPlayerEventsListeners();
 
     // Init a property in the player object to keep track of the ad state
     player.isAd = false;
-    player.currentAd = false;
 
     // Init an empty array that will later contain the ads metadata
     this.ads = [];
@@ -85,12 +83,12 @@ export default class Vast extends Plugin {
           player.ads.endLinearAdMode();
           // Trigger an event when the ad is finished to notify the player consumer
           player.isAd = false;
-          player.currentAd = false;
           console.error(evt);
           player.trigger('vast.error', {
             message: evt,
             tag: options.vastUrl,
           });
+          this.removePlayerEventsListeners();
         });
 
         // send event when ad is playing to remove loading spinner
@@ -118,10 +116,10 @@ export default class Vast extends Plugin {
           player.ads.endLinearAdMode();
           // Trigger an event when the ad is finished to notify the player consumer
           player.isAd = false;
-          player.currentAd = false;
           // stop emitting vast.time
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.complete');
+          this.removePlayerEventsListeners();
         });
 
         // send event when ad is skipped to resume content
@@ -130,10 +128,10 @@ export default class Vast extends Plugin {
           player.ads.endLinearAdMode();
           // Trigger an event when the ad is finished to notify the player consumer
           player.isAd = false;
-          player.currentAd = false;
           // stop emitting vast.time
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.skip');
+          this.removePlayerEventsListeners();
         });
 
         // Declare a function that simply plays an ad, we will call it once we check if
@@ -227,6 +225,22 @@ export default class Vast extends Plugin {
     });
   }
 
+  addPlayerEventsListeners() {
+    this.player.on('play', this.listenToPlay);
+    this.player.on('pause', this.listenToPause);
+    this.player.on('skip', this.listenToSkip);
+    this.player.on('timeupdate', this.listenToTimeUpdate);
+    this.player.on('volumechange', this.listenToVolumeChange);
+  }
+
+  removePlayerEventsListeners() {
+    this.player.off('play', this.listenToPlay);
+    this.player.off('pause', this.listenToPause);
+    this.player.off('skip', this.listenToSkip);
+    this.player.off('timeupdate', this.listenToTimeUpdate);
+    this.player.off('volumechange', this.listenToVolumeChange);
+  }
+
   /*
   * This method is responsible for dealing with the click on the ad
   */
@@ -241,93 +255,71 @@ export default class Vast extends Plugin {
   playLinearAd(adToRun) {
     // Track the impression of an ad
     this.player.one('adplaying', () => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.load(this.macros);
-      }
+      adToRun.linear.tracker.load(this.macros);
     });
 
     // Track the end of an ad
     this.player.one('adended', () => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.complete(this.macros);
-      }
+      adToRun.linear.tracker.complete(this.macros);
     });
 
     // Track when a user clicks on an ad
     this.player.one('vast.click', () => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.click(null, this.macros);
-      }
+      adToRun.linear.tracker.click(null, this.macros);
     });
 
     // Track skip event
     this.internalEventBus.on('vast.skip', () => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.skip(this.macros);
-      }
+      adToRun.linear.tracker.skip(this.macros);
     });
 
     // Track the video entering or leaving fullscreen
     this.player.one('fullscreen', (evt, data) => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.setFullscreen(data.state, this.macros);
-      }
+      adToRun.linear.tracker.setFullscreen(data.state, this.macros);
     });
 
     // Track the user muting or unmuting the video
     this.internalEventBus.on('mute', (data) => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.setMuted(data.state, this.macros);
-      }
+      adToRun.linear.tracker.setMuted(data.state, this.macros);
     });
 
     // Track play event
     this.internalEventBus.on('play', () => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.setPaused(false, this.macros);
-      }
+      adToRun.linear.tracker.setPaused(false, this.macros);
     });
 
     // Track pause event
     this.internalEventBus.on('pause', () => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.setPaused(true, this.macros);
-      }
+      adToRun.linear.tracker.setPaused(true, this.macros);
     });
 
     // Track timeupdate-related events
     this.quartileTracked = false;
     this.halfTracked = false;
     this.internalEventBus.on('timeupdate', (data) => {
-      if (this.player.currentAd === adToRun) {
-        // Track the first quartile event
-        if (!this.quartileTracked && data.currentTime > this.player.duration() / 4) {
-          adToRun.linear.tracker.track('firstQuartile', this.macros);
-          this.quartileTracked = true;
-        }
-        // Track the midpoint event
-        if (!this.halfTracked && data.currentTime > this.player.duration() / 2) {
-          adToRun.linear.tracker.track('midpoint', this.macros);
-          this.halfTracked = true;
-        }
-        // Set progress to track automated trackign events
-        adToRun.linear.tracker.setProgress(data.currentTime, this.macros);
+      // Track the first quartile event
+      if (!this.quartileTracked && data.currentTime > this.player.duration() / 4) {
+        adToRun.linear.tracker.track('firstQuartile', this.macros);
+        this.quartileTracked = true;
       }
+      // Track the midpoint event
+      if (!this.halfTracked && data.currentTime > this.player.duration() / 2) {
+        adToRun.linear.tracker.track('midpoint', this.macros);
+        this.halfTracked = true;
+      }
+      // Set progress to track automated trackign events
+      adToRun.linear.tracker.setProgress(data.currentTime, this.macros);
     });
 
     // Track the first timeupdate event - used for impression tracking
     this.internalEventBus.once('timeupdate', (data) => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.trackImpression(this.macros);
-        adToRun.linear.tracker.overlayViewDuration(data.currentTime, this.macros);
-      }
+      adToRun.linear.tracker.trackImpression(this.macros);
+      adToRun.linear.tracker.overlayViewDuration(data.currentTime, this.macros);
     });
 
     // Track when user closes the video
     window.onbeforeunload = () => {
-      if (this.player.currentAd === adToRun) {
-        adToRun.linear.tracker.close(this.macros);
-      }
+      adToRun.linear.tracker.close(this.macros);
       return null;
     };
 
@@ -342,7 +334,6 @@ export default class Vast extends Plugin {
 
     // Set a property in the player object to indicate that an ad is playing
     this.player.isAd = true;
-    this.player.currentAd = adToRun;
 
     // play linear ad content
     this.player.src(mediaFile.fileURL);
