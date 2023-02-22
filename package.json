@@ -40,7 +40,7 @@
     "@dailymotion/vast-client": "^4.0.0",
     "esbuild": "^0.15.0",
     "events": "^3.3.0",
-    "videojs-contrib-ads": "^7.0.0",
+    "videojs-contrib-ads": "^6.9.0",
     "yargs": "^17.5.1"
   },
   "devDependencies": {
