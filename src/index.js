@@ -56,6 +56,7 @@ export default class Vast extends Plugin {
 
     // Init a property in the player object to keep track of the ad state
     player.isAd = true;
+    player.currentAd = false;
 
     // Init an empty array that will later contain the ads metadata
     this.ads = [];
@@ -84,6 +85,7 @@ export default class Vast extends Plugin {
           player.ads.endLinearAdMode();
           // Trigger an event when the ad is finished to notify the player consumer
           player.isAd = false;
+          player.currentAd = false;
           console.error(evt);
           player.trigger('vast.error', {
             message: evt,
@@ -113,6 +115,7 @@ export default class Vast extends Plugin {
           player.ads.endLinearAdMode();
           // Trigger an event when the ad is finished to notify the player consumer
           player.isAd = false;
+          player.currentAd = false;
           // stop emitting vast.time
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.complete');
@@ -124,6 +127,7 @@ export default class Vast extends Plugin {
           player.ads.endLinearAdMode();
           // Trigger an event when the ad is finished to notify the player consumer
           player.isAd = false;
+          player.currentAd = false;
           // stop emitting vast.time
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           player.trigger('vast.skip');
@@ -234,71 +238,93 @@ export default class Vast extends Plugin {
   playLinearAd(adToRun) {
     // Track the impression of an ad
     this.player.one('adplaying', () => {
-      adToRun.linear.tracker.load(this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.load(this.macros);
+      }
     });
 
     // Track the end of an ad
     this.player.one('adended', () => {
-      adToRun.linear.tracker.complete(this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.complete(this.macros);
+      }
     });
 
     // Track when a user clicks on an ad
     this.player.one('vast.click', () => {
-      adToRun.linear.tracker.click(null, this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.click(null, this.macros);
+      }
     });
 
     // Track skip event
     this.internalEventBus.on('vast.skip', () => {
-      adToRun.linear.tracker.skip(this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.skip(this.macros);
+      }
     });
 
     // Track the video entering or leaving fullscreen
     this.player.one('fullscreen', (evt, data) => {
-      adToRun.linear.tracker.setFullscreen(data.state, this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.setFullscreen(data.state, this.macros);
+      }
     });
 
     // Track the user muting or unmuting the video
     this.internalEventBus.on('mute', (data) => {
-      adToRun.linear.tracker.setMuted(data.state, this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.setMuted(data.state, this.macros);
+      }
     });
 
     // Track play event
     this.internalEventBus.on('play', () => {
-      adToRun.linear.tracker.setPaused(false, this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.setPaused(false, this.macros);
+      }
     });
 
     // Track pause event
     this.internalEventBus.on('pause', () => {
-      adToRun.linear.tracker.setPaused(true, this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.setPaused(true, this.macros);
+      }
     });
 
     // Track timeupdate-related events
     this.quartileTracked = false;
     this.halfTracked = false;
     this.internalEventBus.on('timeupdate', (data) => {
-      // Track the first quartile event
-      if (!this.quartileTracked && data.currentTime > this.player.duration() / 4) {
-        adToRun.linear.tracker.track('firstQuartile', this.macros);
-        this.quartileTracked = true;
+      if (this.player.currentAd === adToRun) {
+        // Track the first quartile event
+        if (!this.quartileTracked && data.currentTime > this.player.duration() / 4) {
+          adToRun.linear.tracker.track('firstQuartile', this.macros);
+          this.quartileTracked = true;
+        }
+        // Track the midpoint event
+        if (!this.halfTracked && data.currentTime > this.player.duration() / 2) {
+          adToRun.linear.tracker.track('midpoint', this.macros);
+          this.halfTracked = true;
+        }
+        // Set progress to track automated trackign events
+        adToRun.linear.tracker.setProgress(data.currentTime, this.macros);
       }
-      // Track the midpoint event
-      if (!this.halfTracked && data.currentTime > this.player.duration() / 2) {
-        adToRun.linear.tracker.track('midpoint', this.macros);
-        this.halfTracked = true;
-      }
-      // Set progress to track automated trackign events
-      adToRun.linear.tracker.setProgress(data.currentTime, this.macros);
     });
 
     // Track the first timeupdate event - used for impression tracking
     this.internalEventBus.once('timeupdate', (data) => {
-      adToRun.linear.tracker.trackImpression(this.macros);
-      adToRun.linear.tracker.overlayViewDuration(data.currentTime, this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.trackImpression(this.macros);
+        adToRun.linear.tracker.overlayViewDuration(data.currentTime, this.macros);
+      }
     });
 
     // Track when user closes the video
     window.onbeforeunload = () => {
-      adToRun.linear.tracker.close(this.macros);
+      if (this.player.currentAd === adToRun) {
+        adToRun.linear.tracker.close(this.macros);
+      }
       return null;
     };
 
@@ -313,6 +339,7 @@ export default class Vast extends Plugin {
 
     // Set a property in the player object to indicate that an ad is playing
     this.player.isAd = true;
+    this.player.currentAd = adToRun;
 
     // play linear ad content
     this.player.src(mediaFile.fileURL);
