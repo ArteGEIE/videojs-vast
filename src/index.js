@@ -105,7 +105,10 @@ export default class Vast extends Plugin {
           // manually trigger time event as native timeupdate is not triggered enough
           clearInterval(global[`vastTimeUpdateInterval_${this.id}`]);
           global[`vastTimeUpdateInterval_${this.id}`] = setInterval(() => {
+            // under Safari, player.duration() is not a number in first events
+            if(!isNaN(player.duration())) {
               player.trigger('vast.time', { position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() });
+            }
           }, 100);
         });
 
