@@ -55,7 +55,7 @@ export default class Vast extends Plugin {
     });
 
     // Init a property in the player object to keep track of the ad state
-    player.isAd = true;
+    player.isAd = false;
     player.currentAd = false;
 
     // Init an empty array that will later contain the ads metadata
