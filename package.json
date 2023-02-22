@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@dailymotion/vast-client": "^4.0.0",
-    "videojs-contrib-ads": "^6.9.0"
+    "videojs-contrib-ads": "^7.0.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.20.2",
