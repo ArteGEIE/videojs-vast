@@ -87,10 +87,12 @@ export default class Vast extends Plugin {
 
     // Notify the player if we reach a timeout while trying to load the ad
     player.on('adtimeout', () => {
+      this.isAdPlaying = false;
       console.error('VastVjs: Timeout');
       player.trigger('vast.error', {
         message: 'VastVjs: Timeout',
       });
+      this.removePlayerEventsListeners();
     });
 
     player.on('adserror', (evt) => {
