@@ -8,6 +8,7 @@ describe.skip('Test suite', () => {
     const player = {
       ads: jest.fn(),
       on: jest.fn(),
+      one: jest.fn(),
       trigger: jest.fn(),
     };
     const options = {};
@@ -21,6 +22,7 @@ describe.skip('Test suite', () => {
     const player = {
       ads: jest.fn(),
       on: jest.fn(),
+      one: jest.fn(),
       trigger: jest.fn(),
     };
     const options = {
@@ -37,6 +39,7 @@ describe.skip('Test suite', () => {
     const player = {
       ads: jest.fn(),
       on: jest.fn(),
+      one: jest.fn(),
       trigger: jest.fn(),
     };
     const options = {
@@ -57,8 +60,8 @@ describe.skip('Test suite', () => {
           startLinearAdMode: jest.fn()
         }
       },
-      on: (name, callback) => eventBus.on(name, callback),
-      one: (name, callback) => eventBus.on(name, callback),
+      on: jest.fn(),
+      one: jest.fn(),
       trigger: jest.fn(),
     };
     const options = {
@@ -84,8 +87,8 @@ describe.skip('Test suite', () => {
           startLinearAdMode: jest.fn()
         }
       },
-      on: (name, callback) => eventBus.on(name, callback),
-      one: (name, callback) => eventBus.on(name, callback),
+      on: jest.fn(),
+      one: jest.fn(),
       trigger: jest.fn(),
     };
     const options = {
