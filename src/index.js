@@ -37,7 +37,9 @@ export default class Vast extends Plugin {
 
     this.listenToPlay = () => {
       if(this.options.debug) console.info('play');
-      if(this.isAdPlaying) this.adToRun.linear.tracker.setPaused(false, this.macros);
+      if(this.isAdPlaying) {
+        this.adToRun.linear.tracker.setPaused(false, this.macros);
+      }
     }
     this.listenToPause = () => {
       if(this.options.debug) console.info('pause');
