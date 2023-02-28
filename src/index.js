@@ -221,7 +221,6 @@ export default class Vast extends Plugin {
         this.ads = res.ads;
         player.trigger('adsready');
       } else {
-        console.error(err);
         player.ads.skipLinearAdMode();
         this.isAdPlaying = false;
         // Deal with the error
