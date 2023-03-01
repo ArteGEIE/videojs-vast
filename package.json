@@ -38,16 +38,16 @@
   },
   "dependencies": {
     "@dailymotion/vast-client": "^4.0.0",
-    "esbuild": "^0.15.0",
-    "videojs-contrib-ads": "^6.9.0",
-    "yargs": "^17.5.1"
+    "videojs-contrib-ads": "^6.9.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.20.2",
     "babel-jest": "^29.3.1",
+    "esbuild": "^0.15.0",
     "jest": "^26.0.0",
     "regenerator-runtime": "^0.13.7",
-    "watch": "^1.0.2"
+    "watch": "^1.0.2",
+    "yargs": "^17.5.1"
   },
   "description": "Open Source VAST plugin for VideoJS",
   "repository": {
