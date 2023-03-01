@@ -1,6 +1,6 @@
 {
   "name": "@arte/videojs-vast",
-  "version": "0.1.0",
+  "version": "0.3.3",
   "main": "./dist/cjs/index.js",
   "module": "./dist/mjs/index.js",
   "license": "MIT",
@@ -33,17 +33,21 @@
     "bundle": "yarn bundle:cjs && yarn bundle:esm",
     "build": "yarn bundle",
     "start": "watch --interval=1 'yarn bundle:local' ./src/",
-    "postinstall": "yarn global add yalc"
+    "test": "jest --coverage",
+    "prepublishOnly": "yarn test; yarn build"
   },
   "dependencies": {
     "@dailymotion/vast-client": "^4.0.0",
-    "esbuild": "^0.15.0",
-    "events": "^3.3.0",
-    "videojs-contrib-ads": "^6.9.0",
-    "yargs": "^17.5.1"
+    "videojs-contrib-ads": "^6.9.0"
   },
   "devDependencies": {
-    "watch": "^1.0.2"
+    "@babel/preset-env": "^7.20.2",
+    "babel-jest": "^29.3.1",
+    "esbuild": "^0.15.0",
+    "jest": "^26.0.0",
+    "regenerator-runtime": "^0.13.7",
+    "watch": "^1.0.2",
+    "yargs": "^17.5.1"
   },
   "description": "Open Source VAST plugin for VideoJS",
   "repository": {
