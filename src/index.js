@@ -339,7 +339,9 @@ export default class Vast extends Plugin {
   * on the ad
   */
   static getBestCtaUrl(adToRun){
-    if (adToRun.videoClickThroughURLTemplate.url) {
+    if (
+      adToRun.videoClickThroughURLTemplate
+      && adToRun.videoClickThroughURLTemplate.url) {
       return adToRun.videoClickThroughURLTemplate.url;
     }
     return false;
