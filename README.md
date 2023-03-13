@@ -62,6 +62,10 @@ videojsInstance.on('vast.play', (event, data) => {
 });
 ```
 
+The plugin can be also used bundled but it's not the recommended way. See demo here
+
+https://www.arte.tv/static/artevpv7/vast/plugin/demo.html
+
 #### Implementing a CTA
 
 The "vast.play" event contains data letting you handle cta clickzone as you want
