@@ -26,6 +26,7 @@ export default class Vast extends Plugin {
     const defaultOptions = {
       vastUrl: false,
       verificationTimeout: 2000,
+      addCtaClickZone: true,
     }
 
     // Assign options that were passed in by the consumer
@@ -119,13 +120,25 @@ export default class Vast extends Plugin {
       if(this.options.debug) console.info('adplaying');
       // Trigger an event to notify the player consumer that the ad is playing
       player.trigger('vast.play', {
-        ctaUrl: this.ctaUrl,
         skipDelay: this.adToRun.linear.tracker.skipDelay,
         adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
       });
       // Track the impression of an ad
       this.adToRun.linear.tracker.load(this.macros);
       this.isAdPlaying = true;
+
+      if(this.options.addCtaClickZone) {
+         // make timeline not clickable
+        this.player.controlBar.progressControl.disable();
+        // ad the cta click
+        this.ctaDiv = document.createElement('div');
+        this.ctaDiv.style.cssText = "position: absolute; bottom: 3em; left: 0;right: 0;top: 0;";
+        this.ctaDiv.addEventListener('click', () => {
+          this.player.pause();
+          this.adClickCallback(this.ctaUrl);
+        });
+        player.el().appendChild(this.ctaDiv);
+      }
     });
 
     // resume content when all your linear ads have finished
@@ -140,6 +153,12 @@ export default class Vast extends Plugin {
 
       // Track the end of an ad
       this.adToRun.linear.tracker.complete(this.macros);
+
+      if(this.options.addCtaClickZone) {
+        // remove cta
+        this.ctaDiv.remove();
+        this.player.controlBar.progressControl.enable();
+      }
     });
 
     // send event when ad is skipped to resume content
@@ -153,6 +172,12 @@ export default class Vast extends Plugin {
       this.removeEventsListeners();
       // Track skip event
       this.adToRun.linear.tracker.skip(this.macros);
+
+      if(this.options.addCtaClickZone) {
+        // remove cta
+        this.ctaDiv.remove();
+        this.player.controlBar.progressControl.enable();
+      }
     });
       
 

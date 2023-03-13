@@ -50,7 +50,7 @@ const videoJsInstance = videojs('my-player', {
 
 // Set up the VAST options
 const vastVjsOptions = {
-  vastUrl: 'https://points-to-vast-manifest.com/'
+  vastUrl: 'https://points-to-vast-manifest.com/',
 };
 
 // Initialize the VAST plugin
@@ -64,14 +64,15 @@ videojsInstance.on('vast.play', (event, data) => {
 
 #### Implementing a CTA
 
-Since the basic philosophy of this plugin is to give the consumer full control over the UI of the player, it does not implement any call to action (CTA) element by default. We do have plans to implement an optional parameter that would render a default clickzone in case you don't want to manage that yourself, but for now it is expected from the consumer that a clickzone is present to capture user clicks in ads.
-
-Assuming that you have a clickzone implemented, you can easily trigger a click by firing an **adClicked** event in the built in VideoJS event bus as shown in the command below. The plugin will then take care of finding the correct CTA URL in the VAST manifest and redirecting the user to that URL.
-
+The "vast.play" event contains data letting you handle cta clickzone as you want
 ```
-// Trigger an ad click callback
-videojsInstance.trigger('adClicked');
+{
+  ctaUrl // the url the click should point to
+  skipDelay: // the time in seconds the skip button should be displayed
+  adClickCallback: // call this callback on click on your optional clickzone
+}
 ```
+By default the plugin handle the cta clickzone. You can disable this default behavior by setting the "addCtaClickZone" to false
 
 #### Options
 
@@ -81,6 +82,7 @@ This plugin currently supports a handful of options that might help you customiz
 * **isLimitedTracking** (boolean) - According to the Vast [documentation](https://interactiveadvertisingbureau.github.io/vast/vast4macros/vast4-macros-latest.html#macro-spec-limitadtracking), relates to the LIMITADTRACKING macro
 * **timeout** (milliseconds - int) - Max amount of time the plugin should wait for the manifest URL to respond and the assets to load. Will throw an error if this value is exceeded.
 * **debug** (boolean) - Display detailed logging in the browser console.
+* **addCtaClickZone** (boolean) - Add or not a clickzone for the cta url
 
 #### Events
 
