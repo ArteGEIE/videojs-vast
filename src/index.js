@@ -127,9 +127,10 @@ export default class Vast extends Plugin {
       this.adToRun.linear.tracker.load(this.macros);
       this.isAdPlaying = true;
 
+       // make timeline not clickable
+       this.player.controlBar.progressControl.disable();
+
       if(this.options.addCtaClickZone) {
-         // make timeline not clickable
-        this.player.controlBar.progressControl.disable();
         // ad the cta click
         this.ctaDiv = document.createElement('div');
         this.ctaDiv.style.cssText = "position: absolute; bottom: 3em; left: 0;right: 0;top: 0;";
@@ -154,10 +155,12 @@ export default class Vast extends Plugin {
       // Track the end of an ad
       this.adToRun.linear.tracker.complete(this.macros);
 
+      // reactivate controlbar
+      this.player.controlBar.progressControl.enable();
+
       if(this.options.addCtaClickZone) {
         // remove cta
         this.ctaDiv.remove();
-        this.player.controlBar.progressControl.enable();
       }
     });
 
@@ -173,10 +176,12 @@ export default class Vast extends Plugin {
       // Track skip event
       this.adToRun.linear.tracker.skip(this.macros);
 
+      // reactivate controlbar
+      this.player.controlBar.progressControl.enable();
+
       if(this.options.addCtaClickZone) {
         // remove cta
         this.ctaDiv.remove();
-        this.player.controlBar.progressControl.enable();
       }
     });
       
