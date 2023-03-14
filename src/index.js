@@ -53,6 +53,9 @@ export default class Vast extends Plugin {
     this.quartileTracked = false;
     this.halfTracked = false;
     this.listenToTimeUpdate = () => {
+      if(!this.adToRun) {
+        return false;
+      }
       // Track the first quartile event
       if (!this.quartileTracked && player.currentTime() > player.duration() / 4) {
         this.adToRun.linear.tracker.track('firstQuartile', this.macros);
@@ -69,6 +72,9 @@ export default class Vast extends Plugin {
       player.trigger('vast.time', { position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() });
     }
     this.listenToTimeUpdateOnce = () => {
+      if(!this.adToRun) {
+        return false;
+      }
       // Track the first timeupdate event - used for impression tracking
       this.adToRun.linear.tracker.trackImpression(this.macros);
       this.adToRun.linear.tracker.overlayViewDuration(player.currentTime(), this.macros);
