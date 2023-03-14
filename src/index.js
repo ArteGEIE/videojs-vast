@@ -126,6 +126,7 @@ export default class Vast extends Plugin {
       if(this.options.debug) console.info('adplaying');
       // Trigger an event to notify the player consumer that the ad is playing
       player.trigger('vast.play', {
+        ctaUrl: this.ctaUrl,
         skipDelay: this.adToRun.linear.tracker.skipDelay,
         adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
       });
