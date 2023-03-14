@@ -4394,7 +4394,7 @@ validate-npm-package-license@^3.0.1:
     spdx-correct "^3.0.0"
     spdx-expression-parse "^3.0.0"
 
-videojs-contrib-ads@^7.0.0:
+videojs-contrib-ads@^7.10.0:
   version "7.1.0"
   resolved "https://registry.yarnpkg.com/videojs-contrib-ads/-/videojs-contrib-ads-7.1.0.tgz#36e4eb26cce0c638e19a426e0cb895cdb13b8222"
   integrity sha512-8ijj2Gog3mIcUBT12/Bh9JMEEfumOtjKhITdu7weJlPFg2XP9s74sVlsElphkB3uQOmdjFVoRJwKvi3aBQr0Sg==
