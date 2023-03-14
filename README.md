@@ -72,8 +72,8 @@ The "vast.play" event contains data letting you handle cta clickzone as you want
 ```
 {
   ctaUrl // the url the click should point to
-  skipDelay: // the time in seconds the skip button should be displayed
-  adClickCallback: // call this callback on click on your optional clickzone
+  skipDelay // the time in seconds the skip button should be displayed
+  adClickCallback // call this callback on click on your optional clickzone
 }
 ```
 By default the plugin handle the cta clickzone. You can disable this default behavior by setting the "addCtaClickZone" to false
