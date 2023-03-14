@@ -39,7 +39,7 @@ Now, import the plugin package and initialize it right after initializing your V
 ```
 // Import the necessary packages
 import videojs from 'video.js';
-import 'videojs-vast';
+import '@arte/videojs-vast';
 
 // Create VideoJS instance
 const videoJsInstance = videojs('my-player', {
@@ -62,7 +62,7 @@ videojsInstance.on('vast.play', (event, data) => {
 });
 ```
 
-The plugin can be also used bundled but it's not the recommended way. See demo here
+See demo here
 
 https://www.arte.tv/static/artevpv7/vast/plugin/demo.html
 

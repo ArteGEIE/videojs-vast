@@ -30,12 +30,11 @@
     "build:cjs": "node ./esbuild.js -t commonjs",
     "build:esm": "node ./esbuild.js -t es6",
     "build:local": "yarn build && yalc push",
-    "bundle": "esbuild ./src/index.js --bundle --outfile=out.js --minify --sourcemap",
+    "bundle:demo": "esbuild ./src/demo.js --bundle --outfile=demo.js --minify --sourcemap",
     "build": "yarn build:cjs && yarn build:esm",
     "start": "watch --interval=1 'yarn build:local' ./src/",
-    "startBundle": "watch --interval=1 'yarn bundle' ./src/",
     "test": "jest --coverage",
-    "prepublishOnly": "yarn test; yarn build; yarn bundle"
+    "prepublishOnly": "yarn test; yarn build; yarn bundle:demo"
   },
   "dependencies": {
     "@dailymotion/vast-client": "^4.0.0",
