@@ -83,7 +83,13 @@ export default class Vast extends Plugin {
       this.adToRun.linear.tracker.setFullscreen(data.state)
     }
 
-    this.addPlayerEventsListeners();
+    // Track when user closes the video
+    this.listenToUnload = () => {
+      this.adToRun.linear.tracker.close(this.macros);
+      return null;
+    }
+
+    this.addEventsListeners();
 
     // Notify the player if we reach a timeout while trying to load the ad
     player.on('adtimeout', () => {
@@ -92,7 +98,7 @@ export default class Vast extends Plugin {
       player.trigger('vast.error', {
         message: 'VastVjs: Timeout',
       });
-      this.removePlayerEventsListeners();
+      this.removeEventsListeners();
     });
 
     player.on('adserror', (evt) => {
@@ -105,7 +111,7 @@ export default class Vast extends Plugin {
         message: evt,
         tag: options.vastUrl,
       });
-      this.removePlayerEventsListeners();
+      this.removeEventsListeners();
     });
 
     // send event when ad is playing to remove loading spinner
@@ -130,7 +136,7 @@ export default class Vast extends Plugin {
       // Trigger an event when the ad is finished to notify the player consumer
       this.isAdPlaying = false;
       player.trigger('vast.complete');
-      this.removePlayerEventsListeners();
+      this.removeEventsListeners();
 
       // Track the end of an ad
       this.adToRun.linear.tracker.complete(this.macros);
@@ -144,16 +150,11 @@ export default class Vast extends Plugin {
       // Trigger an event when the ad is finished to notify the player consumer
       this.isAdPlaying = false;
       player.trigger('vast.skip');
-      this.removePlayerEventsListeners();
+      this.removeEventsListeners();
       // Track skip event
       this.adToRun.linear.tracker.skip(this.macros);
     });
-
-    // Track when user closes the video
-    window.onbeforeunload = () => {
-      this.adToRun.linear.tracker.close(this.macros);
-      return null;
-    };
+      
 
     player.on('readyforpreroll', () => {
       if(this.options.debug) console.info('readyforpreroll');
@@ -229,7 +230,7 @@ export default class Vast extends Plugin {
           message,
           tag: options.vastUrl,
         });
-        this.removePlayerEventsListeners();
+        this.removeEventsListeners();
       }
     })
     .catch((err) => {
@@ -242,26 +243,28 @@ export default class Vast extends Plugin {
         message,
         tag: options.vastUrl,
       });
-      this.removePlayerEventsListeners();
+      this.removeEventsListeners();
     });
   }
 
-  addPlayerEventsListeners() {
+  addEventsListeners() {
     this.player.on('playing', this.listenToPlay);
     this.player.on('pause', this.listenToPause);
     this.player.on('timeupdate', this.listenToTimeUpdate);
     this.player.one('timeupdate', this.listenToTimeUpdateOnce);
     this.player.on('volumechange', this.listenToVolumeChange);
     this.player.on('fullscreen', this.listenToFullScreen);
+    window.addEventListener('beforeunload', this.listenToUnload);
   }
 
-  removePlayerEventsListeners() {
+  removeEventsListeners() {
     this.player.off('playing', this.listenToPlay);
     this.player.off('pause', this.listenToPause);
     this.player.off('timeupdate', this.listenToTimeUpdate);
     this.player.off('timeupdate', this.listenToTimeUpdateOnce);
     this.player.off('volumechange', this.listenToVolumeChange);
     this.player.off('fullscreen', this.listenToFullScreen);
+    window.removeEventListener('beforeunload', this.listenToUnload);
   }
 
   /*
