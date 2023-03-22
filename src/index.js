@@ -192,7 +192,7 @@ export default class Vast extends Plugin {
       }
     });
 
-    player.on('readyforpostroll', function() {
+    player.on('readyforpostroll', () => {
       // disable postroll to avoid adTimeout error, to be improved later
       player.trigger('nopostroll');
     });
