@@ -26,6 +26,7 @@ export default class Vast extends Plugin {
     const defaultOptions = {
       vastUrl: false,
       verificationTimeout: 2000,
+      addCtaClickZone: true,
     }
 
     // Assign options that were passed in by the consumer
@@ -52,6 +53,9 @@ export default class Vast extends Plugin {
     this.quartileTracked = false;
     this.halfTracked = false;
     this.listenToTimeUpdate = () => {
+      if(!this.adToRun) {
+        return false;
+      }
       // Track the first quartile event
       if (!this.quartileTracked && player.currentTime() > player.duration() / 4) {
         this.adToRun.linear.tracker.track('firstQuartile', this.macros);
@@ -68,6 +72,9 @@ export default class Vast extends Plugin {
       player.trigger('vast.time', { position: player.currentTime(), currentTime: player.currentTime(), duration: player.duration() });
     }
     this.listenToTimeUpdateOnce = () => {
+      if(!this.adToRun) {
+        return false;
+      }
       // Track the first timeupdate event - used for impression tracking
       this.adToRun.linear.tracker.trackImpression(this.macros);
       this.adToRun.linear.tracker.overlayViewDuration(player.currentTime(), this.macros);
@@ -126,6 +133,20 @@ export default class Vast extends Plugin {
       // Track the impression of an ad
       this.adToRun.linear.tracker.load(this.macros);
       this.isAdPlaying = true;
+
+       // make timeline not clickable
+       this.player.controlBar.progressControl.disable();
+
+      if(this.options.addCtaClickZone) {
+        // ad the cta click
+        this.ctaDiv = document.createElement('div');
+        this.ctaDiv.style.cssText = "position: absolute; bottom: 3em; left: 0;right: 0;top: 0;";
+        this.ctaDiv.addEventListener('click', () => {
+          this.player.pause();
+          this.adClickCallback(this.ctaUrl);
+        });
+        player.el().appendChild(this.ctaDiv);
+      }
     });
 
     // resume content when all your linear ads have finished
@@ -140,6 +161,14 @@ export default class Vast extends Plugin {
 
       // Track the end of an ad
       this.adToRun.linear.tracker.complete(this.macros);
+
+      // reactivate controlbar
+      this.player.controlBar.progressControl.enable();
+
+      if(this.options.addCtaClickZone) {
+        // remove cta
+        this.ctaDiv.remove();
+      }
     });
 
     // send event when ad is skipped to resume content
@@ -153,6 +182,14 @@ export default class Vast extends Plugin {
       this.removeEventsListeners();
       // Track skip event
       this.adToRun.linear.tracker.skip(this.macros);
+
+      // reactivate controlbar
+      this.player.controlBar.progressControl.enable();
+
+      if(this.options.addCtaClickZone) {
+        // remove cta
+        this.ctaDiv.remove();
+      }
     });
       
 
