@@ -46,6 +46,7 @@
     "esbuild": "^0.15.0",
     "jest": "^26.0.0",
     "regenerator-runtime": "^0.13.7",
+    "video.js": "^8.0.4",
     "watch": "^0.13.0",
     "yargs": "^17.5.1"
   },
