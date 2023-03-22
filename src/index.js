@@ -191,7 +191,11 @@ export default class Vast extends Plugin {
         this.ctaDiv.remove();
       }
     });
-      
+
+    player.on('readyforpostroll', function() {
+      // disable postroll to avoid adTimeout error, to be improved later
+      player.trigger('nopostroll');
+    });
 
     player.on('readyforpreroll', () => {
       if(this.options.debug) console.info('readyforpreroll');
