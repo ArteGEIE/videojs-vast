@@ -71,7 +71,10 @@ export default class Vast extends Plugin {
   handleVAST(vastUrl) {
     // Now let's fetch some ads
     this.vastClient = new VASTClient();
-    this.vastClient.get(vastUrl)
+    this.vastClient.get(vastUrl, {
+      allowMultipleAds: true,
+      resolveAll: true,
+    })
     .then((res) => {
         // Once we are done, trigger adsready event so that we can render a preroll
         this.adsArray = res.ads ? res.ads : [];
@@ -104,33 +107,47 @@ export default class Vast extends Plugin {
 
   readAd() {
     this.adToRun = this.getNextAd();
-    if (this.adToRun.hasLinearCreative()) {
-      this.linearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.linearCreative());
-      this.linearVastTracker.on('firstQuartile', () => {
-        this.debug('firstQuartile');
-      });
-      this.linearVastTracker.on('midpoint', () => {
-        this.debug('midpoint');
-      });
-      // add ad events listeners only if it's a linear ad
-      this.addAdEventsListeners();
-      // trigger adsready which trigger readyforpreroll event
-      this.player.trigger('adsready');
-    } else {
-      this.player.ads.skipLinearAdMode();
+    console.log('next ad', this.adToRun)
+    if(this.adToRun.ad) {
+      if (this.adToRun.hasLinearCreative()) {
+        this.linearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.linearCreative());
+        this.linearVastTracker.on('firstQuartile', () => {
+          this.debug('firstQuartile');
+        });
+        this.linearVastTracker.on('midpoint', () => {
+          this.debug('midpoint');
+        });
+        // add ad events listeners only if it's a linear ad
+        this.addAdEventsListeners();
+        // trigger adsready which trigger readyforpreroll event
+        this.player.trigger('adsready');
+      } else {
+        this.player.ads.skipLinearAdMode();
+        this.removeEventsListeners();
+      }
+      if (this.adToRun.hasNonlinearCreative()) {
+        this.player.one('playing', () => {
+          this.nonLinearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.nonlinearCreative(), 'NonLinearAd');
+          this.playNonLinearAd(this.adToRun.nonlinearCreative());
+        });
+      }
+      if (this.adToRun.hasCompanionCreative()) {
+        this.player.one('playing', () => {
+          this.companionVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.companionCreative(), 'CompanionAd');
+          this.playCompanionAd(this.adToRun.companionCreative())
+        });
+      }
+  } else {
+      // no more ad to play, restore the player content
+      this.player.ads.endLinearAdMode();
+      // remove listeners
       this.removeEventsListeners();
-    }
-    if (this.adToRun.hasNonlinearCreative()) {
-      this.player.one('playing', () => {
-        this.nonLinearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.nonlinearCreative(), 'NonLinearAd');
-        this.playNonLinearAd(this.adToRun.nonlinearCreative());
-      });
-    }
-    if (this.adToRun.hasCompanionCreative()) {
-      this.player.one('playing', () => {
-        this.companionVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.companionCreative(), 'CompanionAd');
-        this.playCompanionAd(this.adToRun.companionCreative())
-      });
+      // reactivate controlbar
+      this.player.controlBar.progressControl.enable();
+      if(this.options.addCtaClickZone) {
+        // remove cta
+        this.ctaDiv.remove();
+      }
     }
   }
 
@@ -301,44 +318,27 @@ export default class Vast extends Plugin {
 
   onSkip = () => {
     this.debug('skip');
-    // Finish ad mode so that regular content can resume
-    this.player.ads.endLinearAdMode();
     // Trigger an event when the ad is finished to notify the player consumer
     this.player.trigger('vast.skip');
-    this.removeEventsListeners();
     // Track skip event
     this.linearVastTracker.skip(this.macros);
 
-    // reactivate controlbar
-    this.player.controlBar.progressControl.enable();
-
-    if(this.options.addCtaClickZone) {
-      // remove cta
-      this.ctaDiv.remove();
-    }
+    this.readAd();
   }
 
   onAdEnded = () => {
     this.debug('adended');
-    // Finish ad mode so that regular content can resume
-    this.player.ads.endLinearAdMode();
+
     // Trigger an event when the ad is finished to notify the player consumer
     this.player.trigger('vast.complete');
-    this.removeEventsListeners();
-
     // Track the end of an ad
     this.linearVastTracker.complete(this.macros);
 
-    // reactivate controlbar
-    this.player.controlBar.progressControl.enable();
-
-    if(this.options.addCtaClickZone) {
-      // remove cta
-      this.ctaDiv.remove();
-    }
+    this.readAd();
   }
 
   addAdEventsListeners() {
+    this.debug('addAdEventsListeners');
     // ad events
     this.player.on('adtimeout', this.onAdTimeout);
     this.player.on('adstart', this.onAdStart);
@@ -349,6 +349,7 @@ export default class Vast extends Plugin {
   }
   
   addEventsListeners() {
+    this.debug('addEventsListeners');
     // regular player events
     this.player.on('playing', this.onPlay);
     this.player.on('pause', this.onPause);
@@ -360,6 +361,7 @@ export default class Vast extends Plugin {
   }
 
   removeAdEventsListeners() {
+    this.debug('removeAdEventsListeners');
     // ad events
     this.player.off('adtimeout', this.onAdTimeout);
     this.player.off('adstart', this.onAdStart);
@@ -370,6 +372,7 @@ export default class Vast extends Plugin {
   }
 
   removeEventsListeners() {
+    this.debug('removeEventsListeners');
     // regular player events
     this.player.off('playing', this.onPlay);
     this.player.off('pause', this.onPause);
