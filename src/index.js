@@ -9,6 +9,8 @@ const Plugin = videojs.getPlugin('plugin');
 // TODO: remove injected verification javascript ?
 // TODO: destructure in methods
 // TODO: use common events name cf https://github.com/videojs/videojs-contrib-ads/blob/main/docs/integrator/common-interface.md ?
+// TODO: implement macros
+// TODO: implement multiple ads chaining
 
 export default class Vast extends Plugin {
   constructor(player, options) {
