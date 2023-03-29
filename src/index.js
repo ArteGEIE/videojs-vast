@@ -105,11 +105,11 @@ export default class Vast extends Plugin {
   readAd() {
     this.adToRun = this.getNextAd();
     if (this.adToRun.hasLinearCreative()) {
-      this.vastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.linearCreative());
-      this.vastTracker.on('firstQuartile', () => {
+      this.linearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.linearCreative());
+      this.linearVastTracker.on('firstQuartile', () => {
         this.debug('firstQuartile');
       });
-      this.vastTracker.on('midpoint', () => {
+      this.linearVastTracker.on('midpoint', () => {
         this.debug('midpoint');
       });
       // add ad events listeners only if it's a linear ad
@@ -117,11 +117,20 @@ export default class Vast extends Plugin {
       // trigger adsready which trigger readyforpreroll event
       this.player.trigger('adsready');
     } else {
-      // no more ad to play; return to regular content
-      this.player.ads.endLinearAdMode();
-      // remove ad events listeners
-      this.removeAdEventsListeners();
-      return false;
+      this.player.ads.skipLinearAdMode();
+      this.removeEventsListeners();
+    }
+    if (this.adToRun.hasNonlinearCreative()) {
+      this.player.one('playing', () => {
+        this.nonLinearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.nonlinearCreative(), 'NonLinearAd');
+        this.playNonLinearAd(this.adToRun.nonlinearCreative());
+      });
+    }
+    if (this.adToRun.hasCompanionCreative()) {
+      this.player.one('playing', () => {
+        this.companionVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.companionCreative(), 'CompanionAd');
+        this.playCompanionAd(this.adToRun.companionCreative())
+      });
     }
   }
 
@@ -148,20 +157,20 @@ export default class Vast extends Plugin {
     this.debug('play');
     // player is currently playing an ad break
     if(this.player.ads.inAdBreak()) {
-      this.vastTracker.setPaused(false, this.macros);
+      this.linearVastTracker.setPaused(false, this.macros);
     }
   }
   onPause = () => {
     this.debug('pause');
     // don't track pause before complete
     if (this.player.duration() - this.player.currentTime() > 0.2) {
-      this.vastTracker.setPaused(true, this.macros);
+      this.linearVastTracker.setPaused(true, this.macros);
     }
   }
   // Track timeupdate-related events
   onTimeUpdate = () => {
     // Set progress to track automated trackign events
-    this.vastTracker.setProgress(this.player.currentTime(), this.macros);
+    this.linearVastTracker.setProgress(this.player.currentTime(), this.macros);
 
     this.player.trigger('vast.time', { position: this.player.currentTime(), currentTime: this.player.currentTime(), duration: this.player.duration() });
   }
@@ -169,25 +178,25 @@ export default class Vast extends Plugin {
   onCanPlay = () => {
     this.debug('can play');
     // Track the first timeupdate event - used for impression tracking
-    this.vastTracker.trackImpression(this.macros);
-    this.vastTracker.overlayViewDuration(this.vastTracker.convertToTimecode(this.player.currentTime()), this.macros);
+    this.linearVastTracker.trackImpression(this.macros);
+    this.linearVastTracker.overlayViewDuration(this.linearVastTracker.convertToTimecode(this.player.currentTime()), this.macros);
   }
 
   onVolumeChange = () => {
     this.debug('volume');
     // Track the user muting or unmuting the video
-    this.vastTracker.setMuted(this.player.muted(), this.macros);
+    this.linearVastTracker.setMuted(this.player.muted(), this.macros);
   }
 
   onFullScreen = (evt, data) => {
     this.debug('fullscreen');
     // Track skip event
-    this.vastTracker.setFullscreen(data.state);
+    this.linearVastTracker.setFullscreen(data.state);
   }
 
   // Track when user closes the video
   onUnload = () => {
-    this.vastTracker.close(this.macros);
+    this.linearVastTracker.close(this.macros);
     this.removeAdEventsListeners();
     return null;
   }
@@ -195,7 +204,7 @@ export default class Vast extends Plugin {
   // Notify the player if we reach a timeout while trying to load the ad
   onAdTimeout = () => {
     //trigger a tracker error
-    this.vastTracker.error({
+    this.linearVastTracker.error({
       ...this.macros,
       ERRORCODE: 301 // timeout of VAST URI
     });
@@ -212,11 +221,11 @@ export default class Vast extends Plugin {
     // Trigger an event to notify the player consumer that the ad is playing
     this.player.trigger('vast.play', {
       ctaUrl: this.ctaUrl,
-      skipDelay: this.vastTracker.skipDelay,
+      skipDelay: this.linearVastTracker.skipDelay,
       adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
     });
     // Track the impression of an ad
-    this.vastTracker.load(this.macros);
+    this.linearVastTracker.load(this.macros);
 
      // make timeline not clickable
      this.player.controlBar.progressControl.disable();
@@ -237,7 +246,7 @@ export default class Vast extends Plugin {
     this.debug('aderror');
     const error = this.player.error();
     //trigger a tracker error
-    this.vastTracker.error({
+    this.linearVastTracker.error({
       ...this.macros,
       ERRORCODE: 900 // undefined error, to be improved
     });
@@ -256,11 +265,8 @@ export default class Vast extends Plugin {
     this.debug('readyforpreroll');
 
     // Retrieve the CTA URl to render
-    this.ctaUrl = false;
-    if(this.adToRun.hasLinearCreative()) {
-      this.ctaUrl = Vast.getBestCtaUrl(this.adToRun.linearCreative());
-      this.debug('ctaUrl', this.ctaUrl);
-    }
+    this.ctaUrl = Vast.getBestCtaUrl(this.adToRun.linearCreative());
+    this.debug('ctaUrl', this.ctaUrl);
     
     // We now check if verification is needed or not, if it is, then we import the
     // verification script with a timeout trigger. If it is not, then we simply display the ad
@@ -270,7 +276,7 @@ export default class Vast extends Plugin {
       // a best effort to load the verification script before the actual ad, but it should not
       // block the ad nor the video playback
       const verificationTimeout = setTimeout(() => {
-        this.playAd(this.adToRun);
+        this.playLinearAd(this.adToRun.linearCreative());
       }, this.options.verificationTimeout);
 
       // Now for each verification script, we need to inject a script tag in the DOM and wait
@@ -283,13 +289,13 @@ export default class Vast extends Plugin {
         } else {
           // Once we are done with all verification tags, clear the timeout timer and play the ad
           clearTimeout(verificationTimeout);
-          this.playAd(this.adToRun);
+          this.playLinearAd(this.adToRun.linearCreative());
         }
       };
       injectScriptTag(this.adToRun.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
     } else {
       // No verification to import, just run the add
-      this.playAd(this.adToRun);
+      this.playLinearAd(this.adToRun.linearCreative());
     }
   }
 
@@ -301,7 +307,7 @@ export default class Vast extends Plugin {
     this.player.trigger('vast.skip');
     this.removeEventsListeners();
     // Track skip event
-    this.vastTracker.skip(this.macros);
+    this.linearVastTracker.skip(this.macros);
 
     // reactivate controlbar
     this.player.controlBar.progressControl.enable();
@@ -321,7 +327,7 @@ export default class Vast extends Plugin {
     this.removeEventsListeners();
 
     // Track the end of an ad
-    this.vastTracker.complete(this.macros);
+    this.linearVastTracker.complete(this.macros);
 
     // reactivate controlbar
     this.player.controlBar.progressControl.enable();
@@ -381,23 +387,7 @@ export default class Vast extends Plugin {
     this.player.trigger('vast.click');
     window.open(ctaUrl, '_blank');
     // Track when a user clicks on an ad
-    this.vastTracker.click(null, this.macros);
-  }
-
-   // Declare a function that simply plays an ad, we will call it once we check if
-  // verification is needed or not
-  playAd = (adToRun) => {
-    // If ad has a linear copy, then execute this
-    if(adToRun.hasLinearCreative()) {
-      this.playLinearAd(adToRun.linearCreative());
-    }
-
-    // Other types of ads should come here....
-    // Please be aware that a single ad can have multple types of creatives
-    // A linear add for example can come with a companion ad and both can should be displayed. Example:
-    // if(adToRun.comanionAd) {
-    //   renderCompanionBannerSomewhere();
-    // }
+    this.linearVastTracker.click(null, this.macros);
   }
 
   /*
@@ -419,9 +409,188 @@ export default class Vast extends Plugin {
     this.player.src(mediaFile.fileURL);
     this.setMacros({
       ASSETURI: mediaFile.fileURL,
-      CONTENTPLAYHEAD: this.vastTracker.convertToTimecode(this.player.currentTime()),
-      MEDIAPLAYHEAD: this.vastTracker.convertToTimecode(this.player.currentTime())
+      CONTENTPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      MEDIAPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime())
     })
+  }
+
+  getCloseButton(clickCallback) {
+    const closeButton  = document.createElement('button');
+    closeButton.addEventListener('click', clickCallback);
+    closeButton.style.width = '20px';
+    closeButton.style.height = '20px';
+    closeButton.style.position = 'absolute';
+    closeButton.style.right = '5px';
+    closeButton.style.top = '5px';
+    closeButton.style.zIndex = '3';
+    closeButton.style.background = '#CCC';
+    closeButton.style.color = '#000';
+    closeButton.style.fontSize = '12px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.textContent = 'X';
+    return closeButton;
+  }
+
+  static applyNonLinearCommonDomStyle(domElement) {
+    domElement.style.cursor = 'pointer';
+    domElement.style.left = '50%';
+    domElement.style.position = 'absolute';
+    domElement.style.transform = 'translateX(-50%)';
+    domElement.style.bottom = '80px';
+    domElement.style.display = 'block';
+    domElement.style.zIndex = '2';
+  }
+  
+  /*
+  * This method is responsible for rendering a nonlinear ad
+  */
+  playNonLinearAd(creative) {
+    for (const variation of creative.variations) {
+
+      this.nonLinearVastTracker.trackImpression(this.macros);
+
+      // image
+      if(!!variation.staticResource) {
+        const ressourceContainer = document.createElement('div');
+        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+
+        const ressource = document.createElement('img');
+        ressource.addEventListener('click', () => {
+          console.info("ressource clicked");
+          window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
+          this.nonLinearVastTracker.click(null, this.macros);
+        });
+        ressourceContainer.style.maxWidth = variation.expandedWidth;
+        ressourceContainer.style.maxHeight = variation.expandedHeight;
+        ressource.src = variation.staticResource;
+
+        // add close button
+        const closeButton = this.getCloseButton(() => ressourceContainer.remove());
+        closeButton.style.display = variation.minSuggestedDuration ? 'none' : 'block';
+
+        if(variation.minSuggestedDuration) {
+          setTimeout(() => {
+            closeButton.style.display = 'block';
+            ressourceContainer.appendChild(closeButton);
+          }, variation.minSuggestedDuration * 1000);
+        }
+        ressourceContainer.appendChild(ressource)
+        this.player.el().appendChild(ressourceContainer)
+      }
+
+      // html
+      if(!!variation.htmlResource) {
+        const ressourceContainer = document.createElement('div');
+        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+        ressourceContainer.addEventListener('click', () => {
+          window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
+          this.nonLinearVastTracker.click(null, this.macros);
+        });
+
+        ressourceContainer.style.maxWidth = variation.expandedWidth;
+        ressourceContainer.style.maxHeight = variation.expandedHeight;
+        ressourceContainer.innerHTML = variation.htmlResource;
+
+        this.player.el().appendChild(ressourceContainer);
+        if(variation.minSuggestedDuration) {
+          setTimeout(() => {
+            ressourceContainer.remove();
+          }, variation.minSuggestedDuration * 1000);
+        }
+      }
+
+      // iframe
+      if(!!variation.iframeResource) {
+        const ressourceContainer = document.createElement('iframe');
+        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+        ressourceContainer.addEventListener('click', () => {
+          window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
+          this.nonLinearVastTracker.click(null, this.macros);
+        });
+
+        ressourceContainer.style.maxWidth = variation.expandedWidth;
+        ressourceContainer.style.maxHeight = variation.expandedHeight;
+
+        ressourceContainer.src = variation.iframeResource;
+        this.player.el().appendChild(ressourceContainer);
+        if(variation.minSuggestedDuration) {
+          setTimeout(() => {
+            ressourceContainer.remove();
+          }, variation.minSuggestedDuration * 1000);
+        }
+      }
+    }
+  }
+
+  /*
+  * This method is responsible for rendering a nonlinear ad
+  */
+  playCompanionAd(creative) {
+    for (const variation of creative.variations) {
+      console.log(variation, this.companionVastTracker);
+
+      this.companionVastTracker.trackImpression(this.macros);
+
+      // image
+      if(variation.staticResources && variation.staticResources.length > 0) {
+        for (const staticResource of variation.staticResources) {
+          const ressourceContainer = document.createElement('div');
+          ressourceContainer.width = variation.staticResources.width;
+          ressourceContainer.height = variation.staticResources.height;
+          ressourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
+          ressourceContainer.style.maxHeight = variation.staticResources.expandedHeight;
+          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+
+          const ressource = document.createElement('img');
+          ressource.addEventListener('click', () => {
+            console.info("ressource clicked");
+            window.open(variation.companionClickThroughURLTemplate, '_blank');
+            this.companionVastTracker.click(null, this.macros);
+          });
+          ressource.src = staticResource.url;
+          ressourceContainer.appendChild(ressource);
+          console.info(ressourceContainer);
+          this.player.el().appendChild(ressourceContainer);
+        }
+      }
+
+      // html
+      if(variation.htmlResources) {
+        for (const htmlResource of variation.htmlResources) {
+          const ressourceContainer = document.createElement('div');
+          ressourceContainer.width = variation.htmlResources.width;
+          ressourceContainer.height = variation.htmlResources.height;
+          ressourceContainer.style.maxWidth = variation.htmlResources.expandedWidth;
+          ressourceContainer.style.maxHeight = variation.htmlResources.expandedHeight;
+          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+          ressourceContainer.addEventListener('click', () => {
+            window.open(variation.companionClickThroughURLTemplate, '_blank');
+            this.companionVastTracker.click(null, this.macros);
+          });
+          ressourceContainer.innerHTML = htmlResource;
+          console.info(ressourceContainer);
+          this.player.el().appendChild(ressourceContainer);
+        }
+      }
+
+      // iframe
+      if(variation.iframeResources) {
+        for (const iframeResource of variation.iframeResources) {
+          const ressourceContainer = document.createElement('div');
+          ressourceContainer.width = variation.iframeResources.width;
+          ressourceContainer.height = variation.iframeResources.height;
+          ressourceContainer.style.maxWidth = variation.iframeResources.expandedWidth;
+          ressourceContainer.style.maxHeight = variation.iframeResources.expandedHeight;
+          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+          ressourceContainer.addEventListener('click', () => {
+            window.open(variation.companionClickThroughURLTemplate, '_blank');
+            this.companionVastTracker.click(null, this.macros);
+          });
+          ressourceContainer.src = iframeResource;
+          this.player.el().appendChild(ressourceContainer);
+        }
+      }
+    }
   }
 
   /*
