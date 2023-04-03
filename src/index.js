@@ -536,8 +536,6 @@ export default class Vast extends Plugin {
   */
   playCompanionAd(creative) {
     for (const variation of creative.variations) {
-      console.log(variation, this.companionVastTracker);
-
       this.companionVastTracker.trackImpression(this.macros);
 
       // image
@@ -558,7 +556,6 @@ export default class Vast extends Plugin {
           });
           ressource.src = staticResource.url;
           ressourceContainer.appendChild(ressource);
-          console.info(ressourceContainer);
           if(variation.adSlotID) {
             document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
           } else {
@@ -581,7 +578,6 @@ export default class Vast extends Plugin {
             this.companionVastTracker.click(null, this.macros);
           });
           ressourceContainer.innerHTML = htmlResource;
-          console.info(ressourceContainer);
           if(variation.adSlotID) {
             document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
           } else {
