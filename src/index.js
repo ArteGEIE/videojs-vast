@@ -142,12 +142,18 @@ export default class Vast extends Plugin {
       this.player.ads.endLinearAdMode();
       // remove listeners
       this.removeEventsListeners();
-      // reactivate controlbar
-      this.player.controlBar.progressControl.enable();
-      if(this.options.addCtaClickZone) {
-        // remove cta
-        this.ctaDiv.remove();
-      }
+    }
+    if (this.adToRun.hasNonlinearCreative()) {
+      this.player.one(this.adToRun.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+        this.nonLinearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.nonlinearCreative(), 'NonLinearAd');
+        this.playNonLinearAd(this.adToRun.nonlinearCreative());
+      });
+    }
+    if (this.adToRun.hasCompanionCreative()) {
+      this.player.one(this.adToRun.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+        this.companionVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.companionCreative(), 'CompanionAd');
+        this.playCompanionAd(this.adToRun.companionCreative())
+      });
     }
   }
 
