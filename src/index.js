@@ -198,8 +198,8 @@ export default class Vast extends Plugin {
     this.player.trigger('vast.time', { position: this.player.currentTime(), currentTime: this.player.currentTime(), duration: this.player.duration() });
   }
 
-  onCanPlay = () => {
-    this.debug('can play');
+  onFirstPlay = () => {
+    this.debug('first play');
     // Track the first timeupdate event - used for impression tracking
     this.linearVastTracker.trackImpression(this.macros);
     this.linearVastTracker.overlayViewDuration(this.linearVastTracker.convertToTimecode(this.player.currentTime()), this.macros);
@@ -360,7 +360,7 @@ export default class Vast extends Plugin {
     this.player.on('playing', this.onPlay);
     this.player.on('pause', this.onPause);
     this.player.on('timeupdate', this.onTimeUpdate);
-    this.player.on('canplay', this.onCanPlay);
+    this.player.one('playing', this.onFirstPlay);
     this.player.on('volumechange', this.onVolumeChange);
     this.player.on('fullscreen', this.onFullScreen);
     window.addEventListener('beforeunload', this.onUnload);
@@ -383,7 +383,7 @@ export default class Vast extends Plugin {
     this.player.off('playing', this.onPlay);
     this.player.off('pause', this.onPause);
     this.player.off('timeupdate', this.onTimeUpdate);
-    this.player.off('canplay', this.onCanPlay);
+    this.player.off('canplay', this.onFirstPlay);
     this.player.off('volumechange', this.onVolumeChange);
     this.player.off('fullscreen', this.onFullScreen);
     window.removeEventListener('beforeunload', this.onUnload);
