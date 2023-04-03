@@ -553,7 +553,11 @@ export default class Vast extends Plugin {
           ressource.src = staticResource.url;
           ressourceContainer.appendChild(ressource);
           console.info(ressourceContainer);
-          this.player.el().appendChild(ressourceContainer);
+          if(variation.adSlotID) {
+            document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
+          } else {
+            this.player.el().appendChild(ressourceContainer);
+          }
         }
       }
 
@@ -572,7 +576,11 @@ export default class Vast extends Plugin {
           });
           ressourceContainer.innerHTML = htmlResource;
           console.info(ressourceContainer);
-          this.player.el().appendChild(ressourceContainer);
+          if(variation.adSlotID) {
+            document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
+          } else {
+            this.player.el().appendChild(ressourceContainer);
+          }
         }
       }
 
@@ -590,7 +598,11 @@ export default class Vast extends Plugin {
             this.companionVastTracker.click(null, this.macros);
           });
           ressourceContainer.src = iframeResource;
-          this.player.el().appendChild(ressourceContainer);
+          if(variation.adSlotID) {
+            document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
+          } else {
+            this.player.el().appendChild(ressourceContainer);
+          }
         }
       }
     }
