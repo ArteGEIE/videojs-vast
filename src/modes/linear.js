@@ -1,10 +1,7 @@
-
-
   /*
   * This method is responsible for rendering a linear ad
   */
 export function playLinearAd(creative) {
-  console.log('thiiiis', this.getBestCtaUrl);
   this.debug('playLinearAd', creative);
   // Retrieve the media file from the VAST manifest
   const mediaFile = this.constructor.getBestMediaFile(creative.mediaFiles);
