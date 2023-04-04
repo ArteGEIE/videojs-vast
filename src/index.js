@@ -2,7 +2,7 @@
 import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
-import { injectScriptTag } from './lib/injectScriptTag';
+import { injectScriptTag, isNumeric } from './lib';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -61,6 +61,15 @@ export default class Vast extends Plugin {
     const { options } = this;
     if(!newMacros) {
       this.macros = {
+        // CACHEBUSTING: '',
+        // TIMESTAMP: '',
+        // ADPLAYHEAD: '',
+        // ASSETURI: '',
+        // PODSEQUENCE: '',
+        // UNIVERSALADID: '',
+        // ADTYPE: '',
+        // ADSERVINGID: '',
+        // ADCATEGORIES: '',
         LIMITADTRACKING: options.isLimitedTracking !== undefined ? options.isLimitedTracking : false, // defaults to false
       }
     } else {
@@ -111,6 +120,72 @@ export default class Vast extends Plugin {
     });
   }
 
+  addIcons() {
+    const { icons } = this.adToRun.linearCreative();
+    // is there some icons ?
+    if(icons && icons.length > 0) {
+      this.iconContainers = [];
+      icons.map((icon) => {
+        console.log(icon)
+        const { height, width, staticResource, htmlResource, iframeResource, xPosition, yPosition, iconClickThroughURLTemplate, duration } = icon;
+        let iconContainer = null;
+        if(staticResource) {
+          iconContainer = document.createElement('img');
+          iconContainer.src = staticResource;
+          iconContainer.height = height;
+          iconContainer.width = width;
+        } else if(htmlResource) {
+          iconContainer = document.createElement('div');
+          iconContainer.innerHTML = icon.htmlResource;
+        } else if (iframeResource) {
+          iconContainer = document.createElement('iframe');
+          iconContainer.src = iframeResource;
+          iconContainer.height = height;
+          iconContainer.width = width;
+        }
+        
+        iconContainer.style.zIndex = "1";
+        iconContainer.style.position = "absolute";
+        // positioning (Y)
+        if (isNumeric(yPosition)) {
+          iconContainer.style.top = `${yPosition}px`;
+        } else {
+          iconContainer.style[['top', 'bottom'].includes(yPosition) ? yPosition : 'top'] = "3em";
+        }
+        // positioning (X)
+        if (isNumeric(xPosition)) {
+          iconContainer.style.left = `${xPosition}px`;
+        } else {
+          iconContainer.style[['right', 'left'].includes(xPosition) ? xPosition : 'left'] = 0;
+        }
+        // on click icon
+        if (iconClickThroughURLTemplate) {
+          iconContainer.style.cursor = 'pointer';
+          iconContainer.addEventListener('click', () => {
+            window.open(iconClickThroughURLTemplate, '_blank');
+            this.linearVastTracker.click(iconClickThroughURLTemplate, this.macros);
+          });
+        }
+        this.iconContainers.push(iconContainer);
+        this.player.el().appendChild(iconContainer);
+        // remove icon after the given duration
+        if(duration !== -1) {
+          const durationInSeconds = duration.split(':').reverse().reduce((prev, curr, i) => prev + curr*Math.pow(60, i), 0);
+          setTimeout(() => {
+            this.player.el().removeChild(iconContainer);
+          }, durationInSeconds * 1000);
+        }
+      })
+    }
+  }
+
+  removeIcons() {
+    // remove icons
+    for (const iconContainer of this.iconContainers) {
+      iconContainer.remove();
+    }
+  }
+
   readAd() {
     this.adToRun = this.getNextAd();
 
@@ -126,6 +201,7 @@ export default class Vast extends Plugin {
       this.linearVastTracker.on('midpoint', () => {
         this.debug('midpoint');
       });
+      this.addIcons();
       // We now check if verification is needed or not, if it is, then we import the
       // verification script with a timeout trigger. If it is not, then we simply display the ad
       // by calling playAd
@@ -281,7 +357,7 @@ export default class Vast extends Plugin {
     if(this.options.addCtaClickZone) {
       // ad the cta click
       this.ctaDiv = document.createElement('div');
-      this.ctaDiv.style.cssText = "position: absolute; bottom:3em; left: 0;right: 0;top: 0;";
+      this.ctaDiv.style.cssText = "position: absolute; bottom:3em; left: 0; right: 0;top: 0;";
       this.ctaDiv.addEventListener('click', () => {
         this.player.pause();
         this.adClickCallback(this.ctaUrl);
@@ -337,6 +413,8 @@ export default class Vast extends Plugin {
     for (const domElement of this.domElements) {
       domElement.remove();
     }
+
+    this.removeIcons();
     
     // pods is not ended go ahead
     if(this.adsArray.length === 0 ) {
@@ -359,6 +437,8 @@ export default class Vast extends Plugin {
     for (const domElement of this.domElements) {
       domElement.remove();
     }
+
+    this.removeIcons();
 
     // pods is not ended go ahead
     if(this.adsArray.length === 0 ) {
