@@ -169,7 +169,7 @@ class Vast extends Plugin {
             this.linearVastTracker.click(iconClickThroughURLTemplate, this.macros);
           });
         }
-        this.iconContainers.push(iconContainer);
+        this.domElements.push(iconContainer);
         this.player.el().appendChild(iconContainer);
         // remove icon after the given duration
         if(duration !== -1) {
@@ -182,10 +182,10 @@ class Vast extends Plugin {
     }
   }
 
-  removeIcons() {
+  removeDomElements() {
     // remove icons
-    for (const iconContainer of this.iconContainers) {
-      iconContainer.remove();
+    for (const domElement of this.domElements) {
+      domElement.remove();
     }
   }
 
@@ -439,12 +439,8 @@ class Vast extends Plugin {
       this.ctaDiv.remove();
     }
 
-    // delete companions or nonlinear elements
-    for (const domElement of this.domElements) {
-      domElement.remove();
-    }
-
-    this.removeIcons();
+    // delete icons, companions or nonlinear elements
+    this.removeDomElements();
     
     // pods is not ended go ahead
     if(this.adsArray.length === 0 ) {
@@ -466,12 +462,8 @@ class Vast extends Plugin {
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
 
-    // delete companions or nonlinear elements
-    for (const domElement of this.domElements) {
-      domElement.remove();
-    }
-
-    this.removeIcons();
+    // delete icons, companions or nonlinear elements
+    this.removeDomElements();
 
     // pods is not ended go ahead
     if(this.adsArray.length === 0 ) {

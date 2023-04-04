@@ -14,6 +14,6 @@ const vastCollection = {
 }
 
 videojs('my-video', { autoplay: true, muted: true }).vast({
-  vastUrl: vastCollection.verification,
+  vastUrl: vastCollection.icons,
   debug: true,
 });
