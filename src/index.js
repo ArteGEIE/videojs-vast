@@ -3,6 +3,7 @@ import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
 import { injectScriptTag, isNumeric, getLocalISOString } from './lib';
+import { playLinearAd, playNonLinearAd, playCompanionAd } from './modes';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -12,7 +13,7 @@ const Plugin = videojs.getPlugin('plugin');
 // TODO: implement macros
 // TODO: implement multiple ads chaining
 
-export default class Vast extends Plugin {
+class Vast extends Plugin {
   constructor(player, options) {
     super(player, options);
     this.player = player;
@@ -35,6 +36,8 @@ export default class Vast extends Plugin {
 
     // array of nonlinear or companions dom element
     this.domElements = [];
+    // array of icons dom containers
+    this.iconContainers = [];
 
     const videojsContribAdsOptions = {
       debug: options.debug !== undefined ? options.debug : false,
@@ -125,7 +128,6 @@ export default class Vast extends Plugin {
     const { icons } = ad.linearCreative();
     // is there some icons ?
     if(icons && icons.length > 0) {
-      this.iconContainers = [];
       icons.map((icon) => {
         console.log(icon)
         const { height, width, staticResource, htmlResource, iframeResource, xPosition, yPosition, iconClickThroughURLTemplate, duration } = icon;
@@ -533,29 +535,7 @@ export default class Vast extends Plugin {
     });
   }
 
-  /*
-  * This method is responsible for rendering a linear ad
-  */
-  playLinearAd = (creative) => {
-    this.debug('playLinearAd', creative);
-    // Retrieve the media file from the VAST manifest
-    const mediaFile = Vast.getBestMediaFile(creative.mediaFiles);
 
-    // Start ad mode
-    this.player.ads.startLinearAdMode();
-
-    // Trigger an event when the ad starts playing
-    this.player.trigger('vast.playAttempt');
-
-    // Set a property in the player object to indicate that an ad is playing
-    // play linear ad content
-    this.player.src(mediaFile.fileURL);
-    this.setMacros({
-      ASSETURI: mediaFile.fileURL,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
-      CONTENTPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
-    })
-  }
 
   getCloseButton(clickCallback) {
     const closeButton  = document.createElement('button');
@@ -582,173 +562,6 @@ export default class Vast extends Plugin {
     domElement.style.bottom = '80px';
     domElement.style.display = 'block';
     domElement.style.zIndex = '2';
-  }
-  
-  /*
-  * This method is responsible for rendering a nonlinear ad
-  */
-  playNonLinearAd(creative) {
-    for (const variation of creative.variations) {
-
-      this.nonLinearVastTracker.trackImpression(this.macros);
-
-      // image
-      if(!!variation.staticResource) {
-        const ressourceContainer = document.createElement('div');
-        this.domElements.push(ressourceContainer);
-        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
-
-        const ressource = document.createElement('img');
-        ressource.addEventListener('click', () => {
-          console.info("ressource clicked");
-          window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
-          this.nonLinearVastTracker.click(null, this.macros);
-        });
-        ressourceContainer.style.maxWidth = variation.expandedWidth;
-        ressourceContainer.style.maxHeight = variation.expandedHeight;
-        ressource.src = variation.staticResource;
-
-        // add close button
-        const closeButton = this.getCloseButton(() => ressourceContainer.remove());
-        closeButton.style.display = variation.minSuggestedDuration ? 'none' : 'block';
-
-        if(variation.minSuggestedDuration) {
-          setTimeout(() => {
-            closeButton.style.display = 'block';
-            ressourceContainer.appendChild(closeButton);
-          }, variation.minSuggestedDuration * 1000);
-        }
-        ressourceContainer.appendChild(ressource)
-        this.player.el().appendChild(ressourceContainer)
-      }
-
-      // html
-      if(!!variation.htmlResource) {
-        const ressourceContainer = document.createElement('div');
-        this.domElements.push(ressourceContainer);
-        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
-        ressourceContainer.addEventListener('click', () => {
-          window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
-          this.nonLinearVastTracker.click(null, this.macros);
-        });
-
-        ressourceContainer.style.maxWidth = variation.expandedWidth;
-        ressourceContainer.style.maxHeight = variation.expandedHeight;
-        ressourceContainer.innerHTML = variation.htmlResource;
-
-        this.player.el().appendChild(ressourceContainer);
-        if(variation.minSuggestedDuration) {
-          setTimeout(() => {
-            ressourceContainer.remove();
-          }, variation.minSuggestedDuration * 1000);
-        }
-      }
-
-      // iframe
-      if(!!variation.iframeResource) {
-        const ressourceContainer = document.createElement('iframe');
-        this.domElements.push(ressourceContainer);
-        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
-        ressourceContainer.addEventListener('click', () => {
-          window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
-          this.nonLinearVastTracker.click(null, this.macros);
-        });
-
-        ressourceContainer.style.maxWidth = variation.expandedWidth;
-        ressourceContainer.style.maxHeight = variation.expandedHeight;
-
-        ressourceContainer.src = variation.iframeResource;
-        this.player.el().appendChild(ressourceContainer);
-        if(variation.minSuggestedDuration) {
-          setTimeout(() => {
-            ressourceContainer.remove();
-          }, variation.minSuggestedDuration * 1000);
-        }
-      }
-    }
-  }
-
-  /*
-  * This method is responsible for rendering a nonlinear ad
-  */
-  playCompanionAd(creative) {
-    for (const variation of creative.variations) {
-      this.companionVastTracker.trackImpression(this.macros);
-
-      // image
-      if(variation.staticResources && variation.staticResources.length > 0) {
-        for (const staticResource of variation.staticResources) {
-          const ressourceContainer = document.createElement('div');
-          this.domElements.push(ressourceContainer);
-          ressourceContainer.width = variation.staticResources.width;
-          ressourceContainer.height = variation.staticResources.height;
-          ressourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
-          ressourceContainer.style.maxHeight = variation.staticResources.expandedHeight;
-          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
-
-          const ressource = document.createElement('img');
-          this.domElements.push(ressourceContainer);
-          ressource.addEventListener('click', () => {
-            console.info("ressource clicked");
-            window.open(variation.companionClickThroughURLTemplate, '_blank');
-            this.companionVastTracker.click(null, this.macros);
-          });
-          ressource.src = staticResource.url;
-          ressourceContainer.appendChild(ressource);
-          if(variation.adSlotID) {
-            document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
-          } else {
-            this.player.el().appendChild(ressourceContainer);
-          }
-        }
-      }
-
-      // html
-      if(variation.htmlResources) {
-        for (const htmlResource of variation.htmlResources) {
-          const ressourceContainer = document.createElement('div');
-          this.domElements.push(ressourceContainer);
-          ressourceContainer.width = variation.htmlResources.width;
-          ressourceContainer.height = variation.htmlResources.height;
-          ressourceContainer.style.maxWidth = variation.htmlResources.expandedWidth;
-          ressourceContainer.style.maxHeight = variation.htmlResources.expandedHeight;
-          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
-          ressourceContainer.addEventListener('click', () => {
-            window.open(variation.companionClickThroughURLTemplate, '_blank');
-            this.companionVastTracker.click(null, this.macros);
-          });
-          ressourceContainer.innerHTML = htmlResource;
-          if(variation.adSlotID) {
-            document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
-          } else {
-            this.player.el().appendChild(ressourceContainer);
-          }
-        }
-      }
-
-      // iframe
-      if(variation.iframeResources) {
-        for (const iframeResource of variation.iframeResources) {
-          const ressourceContainer = document.createElement('div');
-          this.domElements.push(ressourceContainer);
-          ressourceContainer.width = variation.iframeResources.width;
-          ressourceContainer.height = variation.iframeResources.height;
-          ressourceContainer.style.maxWidth = variation.iframeResources.expandedWidth;
-          ressourceContainer.style.maxHeight = variation.iframeResources.expandedHeight;
-          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
-          ressourceContainer.addEventListener('click', () => {
-            window.open(variation.companionClickThroughURLTemplate, '_blank');
-            this.companionVastTracker.click(null, this.macros);
-          });
-          ressourceContainer.src = iframeResource;
-          if(variation.adSlotID) {
-            document.querySelector('#' + variation.adSlotID).appendChild(ressourceContainer);
-          } else {
-            this.player.el().appendChild(ressourceContainer);
-          }
-        }
-      }
-    }
   }
 
   /*
@@ -805,6 +618,12 @@ export default class Vast extends Plugin {
     super.dispose();
   }
 }
+
+Vast.prototype.playLinearAd = playLinearAd;
+Vast.prototype.playNonLinearAd = playNonLinearAd;
+Vast.prototype.playCompanionAd = playCompanionAd;
+
+export default Vast;
 
 // Register the plugin with video.js
 // The or statemente is necessary to deal with old versions of video.js

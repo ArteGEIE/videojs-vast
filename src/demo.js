@@ -13,6 +13,6 @@ const vastCollection = {
 }
 
 videojs('my-video', { autoplay: true, muted: true }).vast({
-  vastUrl: vastCollection.playing,
+  vastUrl: vastCollection.icon,
   debug: true,
 });
