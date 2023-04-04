@@ -29,21 +29,29 @@ export default class Vast extends Plugin {
     this.options = Object.assign(defaultOptions, options);
 
     this.setMacros();
-    this.addEventsListeners();
 
     // Init an empty array that will later contain the ads metadata
     this.adsArray = [];
+
+    // array of nonlinear or companions dom element
+    this.domElements = [];
 
     const videojsContribAdsOptions = {
       debug: options.debug !== undefined ? options.debug : false,
       timeout: options.timeout !== undefined ? options.timeout : 5000,
     };
+
     // initialize videojs-contrib-ads
+    if(!this.player.ads) return;
     this.player.ads(videojsContribAdsOptions);
 
     if(options.vmapUrl) {
       this.handleVMAP(options.vmapUrl);
     } else {
+      this.player.on('readyforpostroll', () => {
+        // disable postroll to avoid adTimeout error, to be improved later
+        this.player.trigger('nopostroll');
+      });
       this.handleVAST(options.vastUrl);
     }
     
@@ -79,9 +87,10 @@ export default class Vast extends Plugin {
         // Once we are done, trigger adsready event so that we can render a preroll
         this.adsArray = res.ads ? res.ads : [];
         if(this.adsArray.length > 0) {
-          this.readAd();
+          // trigger adsready which will trigger readyforpreroll event on play normal video
+          this.addEventsListeners();
+          this.player.trigger('adsready');
         } else {
-          this.player.ads.skipLinearAdMode();
           // TODO: track the error
           // Deal with the error
           const message = 'VastVjs: Empty VAST XML';
@@ -89,67 +98,75 @@ export default class Vast extends Plugin {
             message,
             tag: vastUrl,
           });
-          this.removeEventsListeners();
         }
     })
     .catch((err) => {
       console.error(err);
-      this.player.ads.skipLinearAdMode();
       // Deal with the error
       const message = 'VastVjs: Error while fetching VAST XML';
       this.player.trigger('vast.error', {
         message,
         tag: vastUrl,
       });
-      this.removeEventsListeners();
     });
   }
 
   readAd() {
     this.adToRun = this.getNextAd();
-    console.log('next ad', this.adToRun)
-    if(this.adToRun.ad) {
-      if (this.adToRun.hasLinearCreative()) {
-        this.linearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.linearCreative());
-        this.linearVastTracker.on('firstQuartile', () => {
-          this.debug('firstQuartile');
-        });
-        this.linearVastTracker.on('midpoint', () => {
-          this.debug('midpoint');
-        });
-        // add ad events listeners only if it's a linear ad
-        this.addAdEventsListeners();
-        // trigger adsready which trigger readyforpreroll event
-        this.player.trigger('adsready');
+
+    // Retrieve the CTA URl to render
+    this.ctaUrl = Vast.getBestCtaUrl(this.adToRun.linearCreative());
+    this.debug('ctaUrl', this.ctaUrl);
+
+    if (this.adToRun.hasLinearCreative()) {
+      this.linearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.linearCreative());
+      this.linearVastTracker.on('firstQuartile', () => {
+        this.debug('firstQuartile');
+      });
+      this.linearVastTracker.on('midpoint', () => {
+        this.debug('midpoint');
+      });
+      // We now check if verification is needed or not, if it is, then we import the
+      // verification script with a timeout trigger. If it is not, then we simply display the ad
+      // by calling playAd
+      if ('verification' in this.adToRun.ad && this.adToRun.ad.verification.length > 0) {
+        // Set a timeout for the verification script - accortding to the IAB spec, we should do
+        // a best effort to load the verification script before the actual ad, but it should not
+        // block the ad nor the video playback
+        const verificationTimeout = setTimeout(() => {
+          this.playLinearAd(this.adToRun.linearCreative());
+        }, this.options.verificationTimeout);
+
+        // Now for each verification script, we need to inject a script tag in the DOM and wait
+        // for it to load
+        let index = 0;
+        const scriptTagCallback = () => {
+          index = index + 1;
+          if (index < this.adToRun.ad.verification.length) {
+            injectScriptTag(this.adToRun.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
+          } else {
+            // Once we are done with all verification tags, clear the timeout timer and play the ad
+            clearTimeout(verificationTimeout);
+            this.playLinearAd(this.adToRun.linearCreative());
+          }
+        };
+        injectScriptTag(this.adToRun.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
       } else {
-        this.player.ads.skipLinearAdMode();
-        this.removeEventsListeners();
+        // No verification to import, just run the add
+        this.playLinearAd(this.adToRun.linearCreative());
       }
-      if (this.adToRun.hasNonlinearCreative()) {
-        this.player.one('playing', () => {
-          this.nonLinearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.nonlinearCreative(), 'NonLinearAd');
-          this.playNonLinearAd(this.adToRun.nonlinearCreative());
-        });
-      }
-      if (this.adToRun.hasCompanionCreative()) {
-        this.player.one('playing', () => {
-          this.companionVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.companionCreative(), 'CompanionAd');
-          this.playCompanionAd(this.adToRun.companionCreative())
-        });
-      }
-  } else {
-      // no more ad to play, restore the player content
-      this.player.ads.endLinearAdMode();
-      // remove listeners
-      this.removeEventsListeners();
+    } else {
+      this.player.ads.skipLinearAdMode();
     }
     if (this.adToRun.hasNonlinearCreative()) {
+      // TODO: remove those listeners
       this.player.one(this.adToRun.hasLinearCreative() ? 'adplaying' : 'playing', () => {
         this.nonLinearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.nonlinearCreative(), 'NonLinearAd');
         this.playNonLinearAd(this.adToRun.nonlinearCreative());
       });
     }
     if (this.adToRun.hasCompanionCreative()) {
+      // TODO: remove those listeners
       this.player.one(this.adToRun.hasLinearCreative() ? 'adplaying' : 'playing', () => {
         this.companionVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.companionCreative(), 'CompanionAd');
         this.playCompanionAd(this.adToRun.companionCreative())
@@ -157,13 +174,16 @@ export default class Vast extends Plugin {
     }
   }
 
-      /*
+  /*
   * This method is responsible for retrieving the next ad to play from all the ads present in the
   * VAST manifest.
   * Please be aware that a single ad can have multple types of creatives.
   * A linear add for example can come with a companion ad and both can should be displayed.
   */
   getNextAd() {
+    if(this.adsArray.length === 0) {
+      return null;
+    }
     const nextAd = this.adsArray.shift();
     return {
       ad: nextAd,
@@ -178,14 +198,14 @@ export default class Vast extends Plugin {
 
   onPlay = () => {
     this.debug('play');
-    // player is currently playing an ad break
-    if(this.player.ads.inAdBreak()) {
+    // don't track the very first play to avoid sending resume tracker event
+    if(parseInt(this.player.currentTime(), 10) > 0) {
       this.linearVastTracker.setPaused(false, this.macros);
     }
   }
   onPause = () => {
     this.debug('pause');
-    // don't track pause before complete
+    // don't track the pause event triggered before complete
     if (this.player.duration() - this.player.currentTime() > 0.2) {
       this.linearVastTracker.setPaused(true, this.macros);
     }
@@ -194,7 +214,6 @@ export default class Vast extends Plugin {
   onTimeUpdate = () => {
     // Set progress to track automated trackign events
     this.linearVastTracker.setProgress(this.player.currentTime(), this.macros);
-
     this.player.trigger('vast.time', { position: this.player.currentTime(), currentTime: this.player.currentTime(), duration: this.player.duration() });
   }
 
@@ -207,6 +226,9 @@ export default class Vast extends Plugin {
 
   onVolumeChange = () => {
     this.debug('volume');
+    if(!this.linearVastTracker){
+      return false;
+    }
     // Track the user muting or unmuting the video
     this.linearVastTracker.setMuted(this.player.muted(), this.macros);
   }
@@ -220,17 +242,20 @@ export default class Vast extends Plugin {
   // Track when user closes the video
   onUnload = () => {
     this.linearVastTracker.close(this.macros);
-    this.removeAdEventsListeners();
+    this.removeEventsListeners();
     return null;
   }
 
   // Notify the player if we reach a timeout while trying to load the ad
   onAdTimeout = () => {
+    this.debug('adstart');
     //trigger a tracker error
-    this.linearVastTracker.error({
-      ...this.macros,
-      ERRORCODE: 301 // timeout of VAST URI
-    });
+    if(this.linearVastTracker) {
+      this.linearVastTracker.error({
+        ...this.macros,
+        ERRORCODE: 301 // timeout of VAST URI
+      });
+    }
     console.error('VastVjs: Timeout');
     this.player.trigger('vast.error', {
       message: 'VastVjs: Timeout',
@@ -256,7 +281,7 @@ export default class Vast extends Plugin {
     if(this.options.addCtaClickZone) {
       // ad the cta click
       this.ctaDiv = document.createElement('div');
-      this.ctaDiv.style.cssText = "position: absolute; bottom: 3em; left: 0;right: 0;top: 0;";
+      this.ctaDiv.style.cssText = "position: absolute; bottom:3em; left: 0;right: 0;top: 0;";
       this.ctaDiv.addEventListener('click', () => {
         this.player.pause();
         this.adClickCallback(this.ctaUrl);
@@ -273,119 +298,120 @@ export default class Vast extends Plugin {
       ...this.macros,
       ERRORCODE: 900 // undefined error, to be improved
     });
-    // Finish ad mode so that regular content can resume
-    this.player.ads.endLinearAdMode();
+
     // Trigger an event when the ad is finished to notify the player consumer
     this.player.trigger('vast.error', {
       message: evt,
       tag: options.vastUrl,
     });
-    this.removeEventsListeners();
+
+    // pods is not ended go ahead
+    if(this.adsArray.length === 0 ) {
+      this.resetPlayer();
+    } else {
+      this.readAd();
+    }
   }
 
 
   onReadyForPreroll = () => {
     this.debug('readyforpreroll');
-
-    // Retrieve the CTA URl to render
-    this.ctaUrl = Vast.getBestCtaUrl(this.adToRun.linearCreative());
-    this.debug('ctaUrl', this.ctaUrl);
-    
-    // We now check if verification is needed or not, if it is, then we import the
-    // verification script with a timeout trigger. If it is not, then we simply display the ad
-    // by calling playAd
-    if ('verification' in this.adToRun.ad && this.adToRun.ad.verification.length > 0) {
-      // Set a timeout for the verification script - accortding to the IAB spec, we should do
-      // a best effort to load the verification script before the actual ad, but it should not
-      // block the ad nor the video playback
-      const verificationTimeout = setTimeout(() => {
-        this.playLinearAd(this.adToRun.linearCreative());
-      }, this.options.verificationTimeout);
-
-      // Now for each verification script, we need to inject a script tag in the DOM and wait
-      // for it to load
-      let index = 0;
-      const scriptTagCallback = () => {
-        index = index + 1;
-        if (index < this.adToRun.ad.verification.length) {
-          injectScriptTag(this.adToRun.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
-        } else {
-          // Once we are done with all verification tags, clear the timeout timer and play the ad
-          clearTimeout(verificationTimeout);
-          this.playLinearAd(this.adToRun.linearCreative());
-        }
-      };
-      injectScriptTag(this.adToRun.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
-    } else {
-      // No verification to import, just run the add
-      this.playLinearAd(this.adToRun.linearCreative());
-    }
+    this.readAd();
   }
 
   onSkip = () => {
     this.debug('skip');
+    
     // Trigger an event when the ad is finished to notify the player consumer
     this.player.trigger('vast.skip');
+    
     // Track skip event
     this.linearVastTracker.skip(this.macros);
 
-    this.readAd();
+    if(this.options.addCtaClickZone) {
+      // remove cta
+      this.ctaDiv.remove();
+    }
+
+    // delete companions or nonlinear elements
+    for (const domElement of this.domElements) {
+      domElement.remove();
+    }
+    
+    // pods is not ended go ahead
+    if(this.adsArray.length === 0 ) {
+      this.resetPlayer();
+    }
   }
 
   onAdEnded = () => {
     this.debug('adended');
 
-    // Trigger an event when the ad is finished to notify the player consumer
-    this.player.trigger('vast.complete');
+    if(this.options.addCtaClickZone) {
+      // remove cta
+      this.ctaDiv.remove();
+    }
+
     // Track the end of an ad
     this.linearVastTracker.complete(this.macros);
 
-    this.readAd();
+    // delete companions or nonlinear elements
+    for (const domElement of this.domElements) {
+      domElement.remove();
+    }
+
+    // pods is not ended go ahead
+    if(this.adsArray.length === 0 ) {
+      this.resetPlayer();
+    } else {
+      this.readAd();
+    }
   }
 
-  addAdEventsListeners() {
-    this.debug('addAdEventsListeners');
+  resetPlayer() {
+    // Finish ad mode so that regular content can resume
+    this.player.ads.endLinearAdMode();
+
+    // Trigger an event when the ad is finished to notify the player consumer
+    this.player.trigger('vast.complete');
+
+    this.removeEventsListeners();
+
+    // reactivate controlbar
+    this.player.controlBar.progressControl.enable();
+  }
+
+  addEventsListeners() {
     // ad events
+    this.player.one('adplaying', this.onFirstPlay);
+    this.player.on('adplaying', this.onPlay);
+    this.player.on('adpause', this.onPause);
+    this.player.on('adtimeupdate', this.onTimeUpdate);
+    this.player.on('advolumechange', this.onVolumeChange);
+    this.player.on('adfullscreen', this.onFullScreen);
     this.player.on('adtimeout', this.onAdTimeout);
     this.player.on('adstart', this.onAdStart);
     this.player.on('aderror', this.onAdError);
     this.player.on('readyforpreroll', this.onReadyForPreroll);
     this.player.on('skip', this.onSkip);
     this.player.on('adended', this.onAdEnded);
-  }
-  
-  addEventsListeners() {
-    this.debug('addEventsListeners');
-    // regular player events
-    this.player.on('playing', this.onPlay);
-    this.player.on('pause', this.onPause);
-    this.player.on('timeupdate', this.onTimeUpdate);
-    this.player.one('playing', this.onFirstPlay);
-    this.player.on('volumechange', this.onVolumeChange);
-    this.player.on('fullscreen', this.onFullScreen);
     window.addEventListener('beforeunload', this.onUnload);
   }
 
-  removeAdEventsListeners() {
-    this.debug('removeAdEventsListeners');
-    // ad events
+  removeEventsListeners() {
+    // regular player events
+    this.player.off('adplaying', this.onPlay);
+    this.player.off('adplaying', this.onFirstPlay);
+    this.player.off('adpause', this.onPause);
+    this.player.off('adtimeupdate', this.onTimeUpdate);
+    this.player.off('advolumechange', this.onVolumeChange);
+    this.player.off('adfullscreen', this.onFullScreen);
     this.player.off('adtimeout', this.onAdTimeout);
     this.player.off('adstart', this.onAdStart);
     this.player.off('aderror', this.onAdError);
     this.player.off('readyforpreroll', this.onReadyForPreroll);
     this.player.off('skip', this.onSkip);
     this.player.off('adended', this.onAdEnded);
-  }
-
-  removeEventsListeners() {
-    this.debug('removeEventsListeners');
-    // regular player events
-    this.player.off('playing', this.onPlay);
-    this.player.off('pause', this.onPause);
-    this.player.off('timeupdate', this.onTimeUpdate);
-    this.player.off('canplay', this.onFirstPlay);
-    this.player.off('volumechange', this.onVolumeChange);
-    this.player.off('fullscreen', this.onFullScreen);
     window.removeEventListener('beforeunload', this.onUnload);
   }
 
@@ -461,6 +487,7 @@ export default class Vast extends Plugin {
       // image
       if(!!variation.staticResource) {
         const ressourceContainer = document.createElement('div');
+        this.domElements.push(ressourceContainer);
         Vast.applyNonLinearCommonDomStyle(ressourceContainer);
 
         const ressource = document.createElement('img');
@@ -490,6 +517,7 @@ export default class Vast extends Plugin {
       // html
       if(!!variation.htmlResource) {
         const ressourceContainer = document.createElement('div');
+        this.domElements.push(ressourceContainer);
         Vast.applyNonLinearCommonDomStyle(ressourceContainer);
         ressourceContainer.addEventListener('click', () => {
           window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
@@ -511,6 +539,7 @@ export default class Vast extends Plugin {
       // iframe
       if(!!variation.iframeResource) {
         const ressourceContainer = document.createElement('iframe');
+        this.domElements.push(ressourceContainer);
         Vast.applyNonLinearCommonDomStyle(ressourceContainer);
         ressourceContainer.addEventListener('click', () => {
           window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
@@ -542,6 +571,7 @@ export default class Vast extends Plugin {
       if(variation.staticResources && variation.staticResources.length > 0) {
         for (const staticResource of variation.staticResources) {
           const ressourceContainer = document.createElement('div');
+          this.domElements.push(ressourceContainer);
           ressourceContainer.width = variation.staticResources.width;
           ressourceContainer.height = variation.staticResources.height;
           ressourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
@@ -549,6 +579,7 @@ export default class Vast extends Plugin {
           Vast.applyNonLinearCommonDomStyle(ressourceContainer);
 
           const ressource = document.createElement('img');
+          this.domElements.push(ressourceContainer);
           ressource.addEventListener('click', () => {
             console.info("ressource clicked");
             window.open(variation.companionClickThroughURLTemplate, '_blank');
@@ -568,6 +599,7 @@ export default class Vast extends Plugin {
       if(variation.htmlResources) {
         for (const htmlResource of variation.htmlResources) {
           const ressourceContainer = document.createElement('div');
+          this.domElements.push(ressourceContainer);
           ressourceContainer.width = variation.htmlResources.width;
           ressourceContainer.height = variation.htmlResources.height;
           ressourceContainer.style.maxWidth = variation.htmlResources.expandedWidth;
@@ -590,6 +622,7 @@ export default class Vast extends Plugin {
       if(variation.iframeResources) {
         for (const iframeResource of variation.iframeResources) {
           const ressourceContainer = document.createElement('div');
+          this.domElements.push(ressourceContainer);
           ressourceContainer.width = variation.iframeResources.width;
           ressourceContainer.height = variation.iframeResources.height;
           ressourceContainer.style.maxWidth = variation.iframeResources.expandedWidth;
@@ -660,6 +693,7 @@ export default class Vast extends Plugin {
   * This method is responsible disposing the plugin once it is not needed anymore
   */
   dispose() {
+    this.removeEventsListeners();
     super.dispose();
   }
 }
