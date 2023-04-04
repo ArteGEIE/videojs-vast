@@ -2,7 +2,7 @@
 import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
-import { injectScriptTag, isNumeric } from './lib';
+import { injectScriptTag, isNumeric, getLocalISOString } from './lib';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -60,11 +60,12 @@ export default class Vast extends Plugin {
   setMacros(newMacros = undefined) {
     const { options } = this;
     if(!newMacros) {
+      // generate unique int from current timestamp
+      const cacheBuster = parseInt(Date.now().toString().slice(-8));
+      const ts = getLocalISOString(new Date());
       this.macros = {
-        // CACHEBUSTING: '',
-        // TIMESTAMP: '',
-        // ADPLAYHEAD: '',
-        // ASSETURI: '',
+        CACHEBUSTING: cacheBuster,
+        TIMESTAMP: ts,
         // PODSEQUENCE: '',
         // UNIVERSALADID: '',
         // ADTYPE: '',
@@ -120,8 +121,8 @@ export default class Vast extends Plugin {
     });
   }
 
-  addIcons() {
-    const { icons } = this.adToRun.linearCreative();
+  addIcons(ad) {
+    const { icons } = ad.linearCreative();
     // is there some icons ?
     if(icons && icons.length > 0) {
       this.iconContainers = [];
@@ -187,30 +188,30 @@ export default class Vast extends Plugin {
   }
 
   readAd() {
-    this.adToRun = this.getNextAd();
+    const currentAd = this.getNextAd();
 
     // Retrieve the CTA URl to render
-    this.ctaUrl = Vast.getBestCtaUrl(this.adToRun.linearCreative());
+    this.ctaUrl = Vast.getBestCtaUrl(currentAd.linearCreative());
     this.debug('ctaUrl', this.ctaUrl);
 
-    if (this.adToRun.hasLinearCreative()) {
-      this.linearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.linearCreative());
+    if (currentAd.hasLinearCreative()) {
+      this.linearVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.linearCreative());
       this.linearVastTracker.on('firstQuartile', () => {
         this.debug('firstQuartile');
       });
       this.linearVastTracker.on('midpoint', () => {
         this.debug('midpoint');
       });
-      this.addIcons();
+      this.addIcons(currentAd);
       // We now check if verification is needed or not, if it is, then we import the
       // verification script with a timeout trigger. If it is not, then we simply display the ad
       // by calling playAd
-      if ('verification' in this.adToRun.ad && this.adToRun.ad.verification.length > 0) {
+      if ('verification' in currentAd.ad && currentAd.ad.verification.length > 0) {
         // Set a timeout for the verification script - accortding to the IAB spec, we should do
         // a best effort to load the verification script before the actual ad, but it should not
         // block the ad nor the video playback
         const verificationTimeout = setTimeout(() => {
-          this.playLinearAd(this.adToRun.linearCreative());
+          this.playLinearAd(currentAd.linearCreative());
         }, this.options.verificationTimeout);
 
         // Now for each verification script, we need to inject a script tag in the DOM and wait
@@ -218,34 +219,34 @@ export default class Vast extends Plugin {
         let index = 0;
         const scriptTagCallback = () => {
           index = index + 1;
-          if (index < this.adToRun.ad.verification.length) {
-            injectScriptTag(this.adToRun.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
+          if (index < currentAd.ad.verification.length) {
+            injectScriptTag(currentAd.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
           } else {
             // Once we are done with all verification tags, clear the timeout timer and play the ad
             clearTimeout(verificationTimeout);
-            this.playLinearAd(this.adToRun.linearCreative());
+            this.playLinearAd(currentAd.linearCreative());
           }
         };
-        injectScriptTag(this.adToRun.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
+        injectScriptTag(currentAd.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
       } else {
         // No verification to import, just run the add
-        this.playLinearAd(this.adToRun.linearCreative());
+        this.playLinearAd(currentAd.linearCreative());
       }
     } else {
       this.player.ads.skipLinearAdMode();
     }
-    if (this.adToRun.hasNonlinearCreative()) {
+    if (currentAd.hasNonlinearCreative()) {
       // TODO: remove those listeners
-      this.player.one(this.adToRun.hasLinearCreative() ? 'adplaying' : 'playing', () => {
-        this.nonLinearVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.nonlinearCreative(), 'NonLinearAd');
-        this.playNonLinearAd(this.adToRun.nonlinearCreative());
+      this.player.one(currentAd.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+        this.nonLinearVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.nonlinearCreative(), 'NonLinearAd');
+        this.playNonLinearAd(currentAd.nonlinearCreative());
       });
     }
-    if (this.adToRun.hasCompanionCreative()) {
+    if (currentAd.hasCompanionCreative()) {
       // TODO: remove those listeners
-      this.player.one(this.adToRun.hasLinearCreative() ? 'adplaying' : 'playing', () => {
-        this.companionVastTracker = new VASTTracker(this.vastClient, this.adToRun.ad, this.adToRun.companionCreative(), 'CompanionAd');
-        this.playCompanionAd(this.adToRun.companionCreative())
+      this.player.one(currentAd.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+        this.companionVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.companionCreative(), 'CompanionAd');
+        this.playCompanionAd(currentAd.companionCreative())
       });
     }
   }
@@ -276,14 +277,20 @@ export default class Vast extends Plugin {
     this.debug('play');
     // don't track the very first play to avoid sending resume tracker event
     if(parseInt(this.player.currentTime(), 10) > 0) {
-      this.linearVastTracker.setPaused(false, this.macros);
+      this.linearVastTracker.setPaused(false, { 
+        ...this.macros,
+        ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      });
     }
   }
   onPause = () => {
     this.debug('pause');
     // don't track the pause event triggered before complete
     if (this.player.duration() - this.player.currentTime() > 0.2) {
-      this.linearVastTracker.setPaused(true, this.macros);
+      this.linearVastTracker.setPaused(true, { 
+        ...this.macros,
+        ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      });
     }
   }
   // Track timeupdate-related events
@@ -296,7 +303,10 @@ export default class Vast extends Plugin {
   onFirstPlay = () => {
     this.debug('first play');
     // Track the first timeupdate event - used for impression tracking
-    this.linearVastTracker.trackImpression(this.macros);
+    this.linearVastTracker.trackImpression({ 
+      ...this.macros,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    });
     this.linearVastTracker.overlayViewDuration(this.linearVastTracker.convertToTimecode(this.player.currentTime()), this.macros);
   }
 
@@ -306,7 +316,10 @@ export default class Vast extends Plugin {
       return false;
     }
     // Track the user muting or unmuting the video
-    this.linearVastTracker.setMuted(this.player.muted(), this.macros);
+    this.linearVastTracker.setMuted(this.player.muted(), { 
+      ...this.macros,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    });
   }
 
   onFullScreen = (evt, data) => {
@@ -317,7 +330,10 @@ export default class Vast extends Plugin {
 
   // Track when user closes the video
   onUnload = () => {
-    this.linearVastTracker.close(this.macros);
+    this.linearVastTracker.close({ 
+      ...this.macros,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    });
     this.removeEventsListeners();
     return null;
   }
@@ -349,7 +365,10 @@ export default class Vast extends Plugin {
       adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
     });
     // Track the impression of an ad
-    this.linearVastTracker.load(this.macros);
+    this.linearVastTracker.load({ 
+      ...this.macros,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    });
 
      // make timeline not clickable
      this.player.controlBar.progressControl.disable();
@@ -402,7 +421,10 @@ export default class Vast extends Plugin {
     this.player.trigger('vast.skip');
     
     // Track skip event
-    this.linearVastTracker.skip(this.macros);
+    this.linearVastTracker.skip({ 
+      ...this.macros,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    });
 
     if(this.options.addCtaClickZone) {
       // remove cta
@@ -431,7 +453,10 @@ export default class Vast extends Plugin {
     }
 
     // Track the end of an ad
-    this.linearVastTracker.complete(this.macros);
+    this.linearVastTracker.complete({ 
+      ...this.macros,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    });
 
     // delete companions or nonlinear elements
     for (const domElement of this.domElements) {
@@ -502,7 +527,10 @@ export default class Vast extends Plugin {
     this.player.trigger('vast.click');
     window.open(ctaUrl, '_blank');
     // Track when a user clicks on an ad
-    this.linearVastTracker.click(null, this.macros);
+    this.linearVastTracker.click(null, { 
+      ...this.macros,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    });
   }
 
   /*
@@ -524,8 +552,8 @@ export default class Vast extends Plugin {
     this.player.src(mediaFile.fileURL);
     this.setMacros({
       ASSETURI: mediaFile.fileURL,
+      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
       CONTENTPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
-      MEDIAPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime())
     })
   }
 
