@@ -208,7 +208,7 @@ class Vast extends Plugin {
       // We now check if verification is needed or not, if it is, then we import the
       // verification script with a timeout trigger. If it is not, then we simply display the ad
       // by calling playAd
-      if ('verification' in currentAd.ad && currentAd.ad.verification.length > 0) {
+      if ('adVerifications' in currentAd.ad && currentAd.ad.adVerifications.length > 0) {
         // Set a timeout for the verification script - accortding to the IAB spec, we should do
         // a best effort to load the verification script before the actual ad, but it should not
         // block the ad nor the video playback
@@ -219,17 +219,23 @@ class Vast extends Plugin {
         // Now for each verification script, we need to inject a script tag in the DOM and wait
         // for it to load
         let index = 0;
+        const scriptTagErrorCallback = () => {s
+           // track error
+           this.linearVastTracker.verificationNotExecuted(currentAd.ad.adVerifications[index].vendor, { REASON: 3 });
+           // load next script
+           scriptTagCallback();
+        }
         const scriptTagCallback = () => {
           index = index + 1;
-          if (index < currentAd.ad.verification.length) {
-            injectScriptTag(currentAd.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
+          if (index < currentAd.ad.adVerifications.length) {
+            injectScriptTag(currentAd.ad.adVerifications[index].resource, scriptTagCallback, scriptTagErrorCallback);
           } else {
             // Once we are done with all verification tags, clear the timeout timer and play the ad
             clearTimeout(verificationTimeout);
             this.playLinearAd(currentAd.linearCreative());
           }
         };
-        injectScriptTag(currentAd.ad.verification[index].resource, scriptTagCallback, scriptTagCallback);
+        injectScriptTag(currentAd.ad.adVerifications[index].resource, scriptTagCallback, scriptTagErrorCallback);
       } else {
         // No verification to import, just run the add
         this.playLinearAd(currentAd.linearCreative());
