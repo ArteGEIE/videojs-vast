@@ -32,7 +32,7 @@
     "build:local": "yarn build && yalc push",
     "bundle:demo": "esbuild ./src/demo.js --bundle --outfile=demo.js --minify --sourcemap",
     "build": "yarn build:cjs && yarn build:esm",
-    "start": "watch --interval=1 'yarn build:local' ./src/",
+    "start": "watch --interval=1 'yarn bundle:demo' ./src/",
     "test": "jest --coverage",
     "prepublishOnly": "yarn test; yarn build; yarn bundle:demo"
   },
