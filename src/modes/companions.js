@@ -1,6 +1,7 @@
-  /*
-  * This method is responsible for rendering a nonlinear ad
-  */
+import Vast from '../index';
+/*
+* This method is responsible for rendering a nonlinear ad
+*/
 export function playCompanionAd(creative) {
     for (const variation of creative.variations) {
       this.companionVastTracker.trackImpression(this.macros);
@@ -14,7 +15,7 @@ export function playCompanionAd(creative) {
           ressourceContainer.height = variation.staticResources.height;
           ressourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
           ressourceContainer.style.maxHeight = variation.staticResources.expandedHeight;
-          this.constructor.applyNonLinearCommonDomStyle(ressourceContainer);
+          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
 
           const ressource = document.createElement('img');
           this.domElements.push(ressourceContainer);
@@ -42,7 +43,7 @@ export function playCompanionAd(creative) {
           ressourceContainer.height = variation.htmlResources.height;
           ressourceContainer.style.maxWidth = variation.htmlResources.expandedWidth;
           ressourceContainer.style.maxHeight = variation.htmlResources.expandedHeight;
-          this.constructor.applyNonLinearCommonDomStyle(ressourceContainer);
+          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
           ressourceContainer.addEventListener('click', () => {
             window.open(variation.companionClickThroughURLTemplate, '_blank');
             this.companionVastTracker.click(null, this.macros);
@@ -65,7 +66,7 @@ export function playCompanionAd(creative) {
           ressourceContainer.height = variation.iframeResources.height;
           ressourceContainer.style.maxWidth = variation.iframeResources.expandedWidth;
           ressourceContainer.style.maxHeight = variation.iframeResources.expandedHeight;
-          this.constructor.applyNonLinearCommonDomStyle(ressourceContainer);
+          Vast.applyNonLinearCommonDomStyle(ressourceContainer);
           ressourceContainer.addEventListener('click', () => {
             window.open(variation.companionClickThroughURLTemplate, '_blank');
             this.companionVastTracker.click(null, this.macros);

@@ -1,10 +1,11 @@
-  /*
-  * This method is responsible for rendering a linear ad
-  */
+import Vast from '../index';
+/*
+* This method is responsible for rendering a linear ad
+*/
 export function playLinearAd(creative) {
   this.debug('playLinearAd', creative);
   // Retrieve the media file from the VAST manifest
-  const mediaFile = this.constructor.getBestMediaFile(creative.mediaFiles);
+  const mediaFile = Vast.getBestMediaFile(creative.mediaFiles);
 
   // Start ad mode
   this.player.ads.startLinearAdMode();

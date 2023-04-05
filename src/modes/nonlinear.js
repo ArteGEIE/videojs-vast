@@ -1,6 +1,7 @@
- /*
-  * This method is responsible for rendering a nonlinear ad
-  */
+import Vast from '../index';
+/*
+* This method is responsible for rendering a nonlinear ad
+*/
 export function playNonLinearAd(creative) {
   for (const variation of creative.variations) {
 
@@ -10,7 +11,7 @@ export function playNonLinearAd(creative) {
     if(!!variation.staticResource) {
       const ressourceContainer = document.createElement('div');
       this.domElements.push(ressourceContainer);
-      this.constructor.applyNonLinearCommonDomStyle(ressourceContainer);
+      Vast.applyNonLinearCommonDomStyle(ressourceContainer);
 
       const ressource = document.createElement('img');
       ressource.addEventListener('click', () => {
@@ -40,7 +41,7 @@ export function playNonLinearAd(creative) {
     if(!!variation.htmlResource) {
       const ressourceContainer = document.createElement('div');
       this.domElements.push(ressourceContainer);
-      this.constructor.applyNonLinearCommonDomStyle(ressourceContainer);
+      Vast.applyNonLinearCommonDomStyle(ressourceContainer);
       ressourceContainer.addEventListener('click', () => {
         window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
         this.nonLinearVastTracker.click(null, this.macros);
@@ -62,7 +63,7 @@ export function playNonLinearAd(creative) {
     if(!!variation.iframeResource) {
       const ressourceContainer = document.createElement('iframe');
       this.domElements.push(ressourceContainer);
-      this.constructor.applyNonLinearCommonDomStyle(ressourceContainer);
+      Vast.applyNonLinearCommonDomStyle(ressourceContainer);
       ressourceContainer.addEventListener('click', () => {
         window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
         this.nonLinearVastTracker.click(null, this.macros);
