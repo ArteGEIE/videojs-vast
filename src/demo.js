@@ -13,7 +13,12 @@ const vastCollection = {
   verification: "https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.0%20Samples/Ad_Verification-test.xml"
 }
 
+const vmapCollection = {
+  full: 'https://opencdn.b-cdn.net/pub/5.0/e-v-1/vmap_ad_sample.xml',
+}
+
 videojs('my-video', { autoplay: true, muted: true }).vast({
-  vastUrl: vastCollection.icons,
+  // vastUrl: vastCollection.skip,
+  vmapUrl: vmapCollection.full,
   debug: true,
 });
