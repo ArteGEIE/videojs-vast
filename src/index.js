@@ -2,7 +2,7 @@ import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
 import {
-  injectScriptTag, getLocalISOString, convertTimecodeToSeconds,
+  injectScriptTag, getLocalISOString, convertTimeOffsetToSeconds,
 } from './lib';
 import { playLinearAd, playNonLinearAd, playCompanionAd } from './modes';
 import { addIcons, handleVMAP, parseInlineVastData } from './features';
@@ -133,7 +133,6 @@ class Vast extends Plugin {
 
   readAd() {
     const currentAd = this.getNextAd();
-    console.log('currentAd', currentAd);
 
     // Retrieve the CTA URl to render
     this.ctaUrl = Vast.getBestCtaUrl(currentAd.linearCreative());
@@ -272,10 +271,10 @@ class Vast extends Plugin {
   // track on regular content progress
   onProgress = async () => {
     if (this.watchForProgress && this.watchForProgress.length > 0) {
-      const timeOffsetInSeconds = convertTimecodeToSeconds(this.watchForProgress[0].timeOffset);
+      const { timeOffset } = this.watchForProgress[0];
+      const timeOffsetInSeconds = convertTimeOffsetToSeconds(timeOffset, this.player.duration());
       if (this.player.currentTime() > timeOffsetInSeconds) {
         const nextAd = this.watchForProgress.shift();
-        console.log('this.watchForProgress', this.watchForProgress, nextAd);
         if (nextAd.vastUrl) {
           await this.handleVAST(nextAd.vastUrl);
           this.readAd();
@@ -663,6 +662,7 @@ Vast.prototype.playCompanionAd = playCompanionAd;
 Vast.prototype.addIcons = addIcons;
 Vast.prototype.handleVMAP = handleVMAP;
 Vast.prototype.parseInlineVastData = parseInlineVastData;
+
 export default Vast;
 
 // Register the plugin with video.js
