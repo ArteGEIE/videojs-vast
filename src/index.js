@@ -378,13 +378,14 @@ class Vast extends Plugin {
 
     if (this.options.addCtaClickZone) {
       // add the cta click
-      this.ctaDiv = document.createElement('div');
-      this.ctaDiv.style.cssText = 'position: absolute; bottom:3em; left: 0; right: 0;top: 0;';
-      this.ctaDiv.addEventListener('click', () => {
+      const ctaDiv = document.createElement('div');
+      ctaDiv.style.cssText = 'position: absolute; bottom:3em; left: 0; right: 0;top: 0;';
+      ctaDiv.addEventListener('click', () => {
         this.player.pause();
         this.adClickCallback(this.ctaUrl);
       });
-      this.player.el().appendChild(this.ctaDiv);
+      this.domElements.push(ctaDiv);
+      this.player.el().appendChild(ctaDiv);
     }
   };
 
@@ -474,12 +475,7 @@ class Vast extends Plugin {
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
 
-    if (this.options.addCtaClickZone) {
-      // remove cta
-      this.ctaDiv.remove();
-    }
-
-    // delete icons, companions or nonlinear elements
+    // delete ctadiv, skip btn, icons, companions or nonlinear elements
     this.removeDomElements();
 
     // no more ads (end of preroll, adpods or midroll)
@@ -493,18 +489,13 @@ class Vast extends Plugin {
   onAdEnded = () => {
     this.debug('adended');
 
-    if (this.options.addCtaClickZone) {
-      // remove cta
-      this.ctaDiv.remove();
-    }
-
     // Track the end of an ad
     this.linearVastTracker.complete({
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
 
-    // delete icons, companions or nonlinear elements
+    // delete ctadiv, skip btn, icons, companions or nonlinear elements
     this.removeDomElements();
 
     // no more ads (end of preroll, adpods or midroll)
