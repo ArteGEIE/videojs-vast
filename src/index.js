@@ -51,7 +51,9 @@ class Vast extends Plugin {
     } else {
       this.disablePostroll();
       (async () => {
-        await this.handleVAST(options.vastUrl);
+        await this.handleVAST(options.vastUrl, () => {
+          this.disablePreroll();
+        });
         if (this.adsArray.length > 0) {
           this.addEventsListeners();
           // has to be done outside of handleVAST because not done at the same moment for VMAP case
@@ -97,7 +99,7 @@ class Vast extends Plugin {
     }
   }
 
-  async handleVAST(vastUrl) {
+  async handleVAST(vastUrl, onError = null) {
     // Now let's fetch some adsonp
     this.vastClient = new VASTClient();
     try {
@@ -116,6 +118,7 @@ class Vast extends Plugin {
       }
     } catch (err) {
       console.error(err);
+      onError?.();
       // Deal with the error
       const message = 'VastVjs: Error while fetching VAST XML';
       this.player.trigger('vast.error', {
