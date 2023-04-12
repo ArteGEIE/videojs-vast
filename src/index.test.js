@@ -1,7 +1,8 @@
 import videojs from 'video.js';
-import Vast from './index.js';
-const regeneratorRuntime = require('regenerator-runtime/runtime');
 import { EventEmitter } from 'events';
+import Vast from './index.js';
+
+const regeneratorRuntime = require('regenerator-runtime/runtime');
 
 describe.skip('Test suite', () => {
   test('Plugin must be registered', () => {
@@ -30,7 +31,7 @@ describe.skip('Test suite', () => {
     };
 
     const vastInstance = new Vast(player, options);
-    
+
     await new Promise((r) => setTimeout(r, 4000));
     expect(player.trigger).toHaveBeenCalledWith('adsready');
   });
@@ -47,18 +48,18 @@ describe.skip('Test suite', () => {
     };
 
     const vastInstance = new Vast(player, options);
-    
+
     expect(player.on).toHaveBeenCalledTimes(7);
   });
 
   test('Plugin must init linear ad mode and update the videojs source URL with the ad copy', async () => {
-    const eventBus = new EventEmitter()
+    const eventBus = new EventEmitter();
     const player = {
       src: jest.fn(),
       ads: () => {
         player.ads = {
-          startLinearAdMode: jest.fn()
-        }
+          startLinearAdMode: jest.fn(),
+        };
       },
       on: jest.fn(),
       one: jest.fn(),
@@ -69,7 +70,7 @@ describe.skip('Test suite', () => {
     };
 
     const vastInstance = new Vast(player, options);
-    
+
     await new Promise((r) => setTimeout(r, 4000));
     eventBus.emit('readyforpreroll');
     await new Promise((r) => setTimeout(r, 2400));
@@ -79,13 +80,13 @@ describe.skip('Test suite', () => {
   });
 
   test('Plugin must initilize tracker when preparing ad', async () => {
-    const eventBus = new EventEmitter()
+    const eventBus = new EventEmitter();
     const player = {
       src: jest.fn(),
       ads: () => {
         player.ads = {
-          startLinearAdMode: jest.fn()
-        }
+          startLinearAdMode: jest.fn(),
+        };
       },
       on: jest.fn(),
       one: jest.fn(),
@@ -96,7 +97,7 @@ describe.skip('Test suite', () => {
     };
 
     const vastInstance = new Vast(player, options);
-    
+
     await new Promise((r) => setTimeout(r, 4000));
     const nextAd = vastInstance.getNextAd();
     expect(nextAd.linear.tracker).toBeTruthy();

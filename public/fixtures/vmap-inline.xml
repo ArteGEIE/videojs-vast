@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vmap:VMAP version="1.0" xmlns:vmap="http://www.iab.net/videosuite/vmap" >
+    <vmap:AdBreak breakId="8661748b-b25a-4569-b03e-9dd33a43b28c" breakType="linear" timeOffset="start">
+        <vmap:AdSource allowMultipleAds="true" followRedirects="true" id="-1675117733">
+            <vmap:VASTAdData>
+                <VAST version="3.0" xmlns="http://www.iab.net/videosuite/vast">
+                    <Ad id="8661748b-b25a-4569-b03e-9dd33a43b28c" sequence="1">
+                        <Wrapper>
+                            <AdSystem>SMART AdServer</AdSystem>
+                            <VASTAdTagURI><![CDATA[https://www.arte.tv/static/artevpv7/vast/vast.xml]]></VASTAdTagURI>
+                            <Error><![CDATA[https://videodiff-dev.internal.smartadserver.com/track/action?ec=[ERRORCODE]&key=videoerror&opid=8661748b-b25a-4569-b03e-9dd33a43b28c&opdt=1637849557&pid=1000137181&fmtid=1000008263&imptype=1&ab=1]]></Error>
+                            <Impression><![CDATA[https://videodiff-dev.internal.smartadserver.com/track/action?key=vmapimpression&opid=8661748b-b25a-4569-b03e-9dd33a43b28c&opdt=1637849557&pid=1000137181&fmtid=1000008263&imptype=1&ab=1]]></Impression>
+                            <Creatives/>
+                        </Wrapper>
+                    </Ad>
+                </VAST>
+            </vmap:VASTAdData>
+        </vmap:AdSource>
+    </vmap:AdBreak>
+    <vmap:AdBreak breakId="67d32666-1613-4a8d-b7f9-34a8064770b3" breakType="linear" timeOffset="00:00:05.000">
+        <vmap:AdSource allowMultipleAds="true" followRedirects="true" id="907710148">
+            <vmap:VASTAdData>
+                <VAST version="3.0" xmlns="http://www.iab.net/videosuite/vast">
+                    <Ad id="67d32666-1613-4a8d-b7f9-34a8064770b3" sequence="1">
+                        <Wrapper>
+                            <AdSystem>SMART AdServer</AdSystem>
+                            <VASTAdTagURI><![CDATA[https://www.arte.tv/static/artevpv7/vast/vast.xml]]></VASTAdTagURI>
+                            <Error><![CDATA[https://videodiff-dev.internal.smartadserver.com/track/action?ec=[ERRORCODE]&key=videoerror&opid=67d32666-1613-4a8d-b7f9-34a8064770b3&opdt=1637849557&pid=1000137181&fmtid=1000008263&imptype=1&ab=2]]></Error>
+                            <Impression><![CDATA[https://videodiff-dev.internal.smartadserver.com/track/action?key=vmapimpression&opid=67d32666-1613-4a8d-b7f9-34a8064770b3&opdt=1637849557&pid=1000137181&fmtid=1000008263&imptype=1&ab=2]]></Impression>
+                            <Creatives/>
+                        </Wrapper>
+                    </Ad>
+                </VAST>
+            </vmap:VASTAdData>
+        </vmap:AdSource>
+    </vmap:AdBreak>
+    <vmap:AdBreak breakId="485e36e3-50ed-4723-bf3a-826aa6d6e52f" breakType="linear" timeOffset="end">
+        <vmap:AdSource allowMultipleAds="true" followRedirects="true" id="1243253271">
+            <vmap:VASTAdData>
+                <VAST version="3.0" xmlns="http://www.iab.net/videosuite/vast">
+                    <Ad id="485e36e3-50ed-4723-bf3a-826aa6d6e52f" sequence="1" xmlns="http://www.iab.net/videosuite/vast">
+                        <Wrapper>
+                            <AdSystem>SMART AdServer</AdSystem>
+                            <VASTAdTagURI><![CDATA[https://www.arte.tv/static/artevpv7/vast/vast.xml]]></VASTAdTagURI>
+                            <Error><![CDATA[https://videodiff-dev.internal.smartadserver.com/track/action?ec=[ERRORCODE]&key=videoerror&opid=485e36e3-50ed-4723-bf3a-826aa6d6e52f&opdt=1637849557&pid=1000137181&fmtid=1000008263&imptype=1&ab=3]]></Error>
+                            <Impression><![CDATA[https://videodiff-dev.internal.smartadserver.com/track/action?key=vmapimpression&opid=485e36e3-50ed-4723-bf3a-826aa6d6e52f&opdt=1637849557&pid=1000137181&fmtid=1000008263&imptype=1&ab=3]]></Impression>
+                            <Creatives/>
+                        </Wrapper>
+                    </Ad>
+                </VAST>
+            </vmap:VASTAdData>
+        </vmap:AdSource>
+    </vmap:AdBreak>
+</vmap:VMAP>

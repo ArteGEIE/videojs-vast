@@ -32,6 +32,7 @@
     "build:local": "yarn build && yalc push",
     "bundle:demo": "esbuild ./src/demo.js --bundle --outfile=public/demo.js --minify --sourcemap",
     "build": "yarn build:cjs && yarn build:esm",
+    "lint": "eslint ./src",
     "start": "concurrently \"serve -l 3000 public\" \"watch --interval=1 'yarn bundle:demo' ./src/\"",
     "test": "jest --coverage",
     "prepublishOnly": "yarn test; yarn build; yarn bundle:demo"

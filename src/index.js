@@ -1,17 +1,13 @@
-/* eslint-disable no-param-reassign */
 import videojs from 'video.js';
 import 'videojs-contrib-ads';
-import { VASTClient, VASTTracker, VASTParser } from '@dailymotion/vast-client';
+import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
 import {
-  injectScriptTag, isNumeric, getLocalISOString, fetchVmapUrl, convertTimecodeToSeconds,
+  injectScriptTag, getLocalISOString, convertTimecodeToSeconds,
 } from './lib';
 import { playLinearAd, playNonLinearAd, playCompanionAd } from './modes';
+import { addIcons, handleVMAP, parseInlineVastData } from './features';
 
 const Plugin = videojs.getPlugin('plugin');
-
-// TODO: remove injected verification javascript ?
-// TODO: destructure in methods
-// TODO: use common events name cf https://github.com/videojs/videojs-contrib-ads/blob/main/docs/integrator/common-interface.md ?
 
 class Vast extends Plugin {
   constructor(player, options) {
@@ -69,7 +65,9 @@ class Vast extends Plugin {
   }
 
   disablePostroll() {
-    this.player.trigger('nopostroll');
+    this.player.on('readyforpostroll', () => {
+      this.player.trigger('nopostroll');
+    });
   }
 
   setMacros(newMacros = undefined) {
@@ -98,65 +96,7 @@ class Vast extends Plugin {
     }
   }
 
-  async handleVMAP(vmapUrl) {
-    try {
-      const vmap = await fetchVmapUrl(vmapUrl);
-      console.log('vmap ok', vmap);
-      if (vmap.adBreaks && vmap.adBreaks.length > 0) {
-        const vastParser = new VASTParser();
-        this.addEventsListeners();
-        // handle preroll
-        const preroll = Vast.getPreroll(vmap.adBreaks);
-        console.log('preroll', preroll);
-        if (!preroll) {
-          this.disablePreroll();
-        } else if (preroll.adSource.adTagURI && preroll.adSource.adTagURI.uri) {
-          // load vast preroll url
-          await this.handleVAST(preroll.adSource.adTagURI.uri);
-          // a preroll has been found, trigger adsready
-          this.player.trigger('adsready');
-        } else if (preroll.adSource.vastAdData) {
-          vastParser.parseVAST(preroll.adSource.vastAdData)
-            .then((parsedVAST) => {
-              console.log('parsedVAST', parsedVAST);
-              // TODO: Do something with the parsed VAST response
-            })
-            .catch((err) => {
-              console.log('error', err);
-              // TODO: Deal with the error
-            });
-        }
-        // handle postroll
-        const postroll = Vast.getPostroll(vmap.adBreaks);
-        if (!postroll) {
-          this.disablePostroll();
-        } else if (postroll.adSource?.adTagURI?.uri) {
-          this.postRollUrl = postroll.adSource.adTagURI.uri;
-        } else if (postroll.adSource.vastAdData) {
-          vastParser.parseVAST(postroll.adSource.vastAdData)
-            .then((parsedVAST) => {
-              // TODO: Do something with the parsed VAST response
-              this.postRollData = parsedVAST;
-            })
-            .catch((err) => {
-              // TODO: Deal with the error
-            });
-        }
-        this.watchForProgress = Vast.getMidrolls(vmap.adBreaks);
-        console.log('this.watchForProgress', this.watchForProgress);
-        if (this.watchForProgress.length > 0) {
-          // listen on regular content for midroll handling
-          this.player.on('timeupdate', this.onProgress);
-        }
-      }
-    } catch (err) {
-      // could not fetch vmap
-      console.error(err);
-    }
-  }
-
   async handleVAST(vastUrl) {
-    console.log('handleVAST');
     // Now let's fetch some adsonp
     this.vastClient = new VASTClient();
     try {
@@ -164,7 +104,7 @@ class Vast extends Plugin {
         allowMultipleAds: true,
         resolveAll: true,
       });
-      this.adsArray = response.ads ? response.ads : [];
+      this.adsArray = response.ads ?? [];
       if (this.adsArray.length === 0) {
         // Deal with the error
         const message = 'VastVjs: Empty VAST XML';
@@ -180,66 +120,6 @@ class Vast extends Plugin {
       this.player.trigger('vast.error', {
         message,
         tag: vastUrl,
-      });
-    }
-  }
-
-  addIcons(ad) {
-    const { icons } = ad.linearCreative();
-    // is there some icons ?
-    if (icons && icons.length > 0) {
-      icons.forEach((icon) => {
-        const {
-          height, width, staticResource,
-          htmlResource, iframeResource, xPosition, yPosition, iconClickThroughURLTemplate, duration,
-        } = icon;
-        let iconContainer = null;
-        if (staticResource) {
-          iconContainer = document.createElement('img');
-          iconContainer.src = staticResource;
-          iconContainer.height = height;
-          iconContainer.width = width;
-        } else if (htmlResource) {
-          iconContainer = document.createElement('div');
-          iconContainer.innerHTML = icon.htmlResource;
-        } else if (iframeResource) {
-          iconContainer = document.createElement('iframe');
-          iconContainer.src = iframeResource;
-          iconContainer.height = height;
-          iconContainer.width = width;
-        }
-
-        iconContainer.style.zIndex = '1';
-        iconContainer.style.position = 'absolute';
-        // positioning (Y)
-        if (isNumeric(yPosition)) {
-          iconContainer.style.top = `${yPosition}px`;
-        } else {
-          iconContainer.style[['top', 'bottom'].includes(yPosition) ? yPosition : 'top'] = '3em';
-        }
-        // positioning (X)
-        if (isNumeric(xPosition)) {
-          iconContainer.style.left = `${xPosition}px`;
-        } else {
-          iconContainer.style[['right', 'left'].includes(xPosition) ? xPosition : 'left'] = 0;
-        }
-        // on click icon
-        if (iconClickThroughURLTemplate) {
-          iconContainer.style.cursor = 'pointer';
-          iconContainer.addEventListener('click', () => {
-            window.open(iconClickThroughURLTemplate, '_blank');
-            this.linearVastTracker.click(iconClickThroughURLTemplate, this.macros);
-          });
-        }
-        this.domElements.push(iconContainer);
-        this.player.el().appendChild(iconContainer);
-        // remove icon after the given duration
-        if (duration !== -1) {
-          const durationInSeconds = duration.split(':').reverse().reduce((prev, curr, i) => prev + curr * 60 ** i, 0);
-          setTimeout(() => {
-            this.player.el().removeChild(iconContainer);
-          }, durationInSeconds * 1000);
-        }
       });
     }
   }
@@ -400,7 +280,7 @@ class Vast extends Plugin {
           await this.handleVAST(nextAd.vastUrl);
           this.readAd();
         } else if (nextAd.vastData) {
-          // TODO: handle inline vast data
+          this.parseInlineVastData(nextAd.vastData, 'midroll');
         }
       }
     }
@@ -539,6 +419,8 @@ class Vast extends Plugin {
       this.readAd();
     } else if (this.postRollData) {
       // handle inline data
+      this.adsArray = this.postRollData;
+      this.readAd();
     }
   };
 
@@ -627,9 +509,8 @@ class Vast extends Plugin {
     window.addEventListener('beforeunload', this.onUnload);
   }
 
-  removeEventsListeners() {
+  removeEventsListeners() {
     this.debug('removeEventsListeners');
-    // regular player events
     this.player.off('adplaying', this.onAdPlay);
     this.player.off('adplaying', this.onFirstPlay);
     this.player.off('adpause', this.onAdPause);
@@ -639,6 +520,7 @@ class Vast extends Plugin {
     this.player.off('adtimeout', this.onAdTimeout);
     this.player.off('adstart', this.onAdStart);
     this.player.off('aderror', this.onAdError);
+    // added only if some midrolls have been found, remove by security
     this.player.off('timeupdate', this.onProgress);
     this.player.off('readyforpreroll', this.onReadyForPreroll);
     this.player.off('readyforpostroll', this.onReadyForPostroll);
@@ -736,7 +618,7 @@ class Vast extends Plugin {
           ...prev,
           {
             timeOffset: current.timeOffset,
-            vastUrl: current.adSource?.adTagURI?.uri,
+            vastUrl: current.adSource.adTagURI?.uri,
             vastData: current.adSource.vastAdData,
           },
         ]), []);
@@ -778,7 +660,9 @@ class Vast extends Plugin {
 Vast.prototype.playLinearAd = playLinearAd;
 Vast.prototype.playNonLinearAd = playNonLinearAd;
 Vast.prototype.playCompanionAd = playCompanionAd;
-
+Vast.prototype.addIcons = addIcons;
+Vast.prototype.handleVMAP = handleVMAP;
+Vast.prototype.parseInlineVastData = parseInlineVastData;
 export default Vast;
 
 // Register the plugin with video.js
