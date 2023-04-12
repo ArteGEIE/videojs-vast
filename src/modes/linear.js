@@ -20,5 +20,5 @@ export function playLinearAd(creative) {
     ASSETURI: mediaFile.fileURL,
     ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     CONTENTPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
-  })
+  });
 }

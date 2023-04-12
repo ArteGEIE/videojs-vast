@@ -3,19 +3,18 @@ import Vast from '../index';
 * This method is responsible for rendering a nonlinear ad
 */
 export function playNonLinearAd(creative) {
-  for (const variation of creative.variations) {
-
+  creative.variations.map((variation) => {
     this.nonLinearVastTracker.trackImpression(this.macros);
 
     // image
-    if(!!variation.staticResource) {
+    if (variation.staticResource) {
       const ressourceContainer = document.createElement('div');
       this.domElements.push(ressourceContainer);
       Vast.applyNonLinearCommonDomStyle(ressourceContainer);
 
       const ressource = document.createElement('img');
       ressource.addEventListener('click', () => {
-        console.info("ressource clicked");
+        console.info('ressource clicked');
         window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
         this.nonLinearVastTracker.click(null, this.macros);
       });
@@ -24,21 +23,21 @@ export function playNonLinearAd(creative) {
       ressource.src = variation.staticResource;
 
       // add close button
-      const closeButton = this.getCloseButton(() => ressourceContainer.remove());
+      const closeButton = Vast.getCloseButton(() => ressourceContainer.remove());
       closeButton.style.display = variation.minSuggestedDuration ? 'none' : 'block';
 
-      if(variation.minSuggestedDuration) {
+      if (variation.minSuggestedDuration) {
         setTimeout(() => {
           closeButton.style.display = 'block';
           ressourceContainer.appendChild(closeButton);
         }, variation.minSuggestedDuration * 1000);
       }
-      ressourceContainer.appendChild(ressource)
-      this.player.el().appendChild(ressourceContainer)
+      ressourceContainer.appendChild(ressource);
+      this.player.el().appendChild(ressourceContainer);
     }
 
     // html
-    if(!!variation.htmlResource) {
+    if (variation.htmlResource) {
       const ressourceContainer = document.createElement('div');
       this.domElements.push(ressourceContainer);
       Vast.applyNonLinearCommonDomStyle(ressourceContainer);
@@ -52,7 +51,7 @@ export function playNonLinearAd(creative) {
       ressourceContainer.innerHTML = variation.htmlResource;
 
       this.player.el().appendChild(ressourceContainer);
-      if(variation.minSuggestedDuration) {
+      if (variation.minSuggestedDuration) {
         setTimeout(() => {
           ressourceContainer.remove();
         }, variation.minSuggestedDuration * 1000);
@@ -60,7 +59,7 @@ export function playNonLinearAd(creative) {
     }
 
     // iframe
-    if(!!variation.iframeResource) {
+    if (variation.iframeResource) {
       const ressourceContainer = document.createElement('iframe');
       this.domElements.push(ressourceContainer);
       Vast.applyNonLinearCommonDomStyle(ressourceContainer);
@@ -74,11 +73,12 @@ export function playNonLinearAd(creative) {
 
       ressourceContainer.src = variation.iframeResource;
       this.player.el().appendChild(ressourceContainer);
-      if(variation.minSuggestedDuration) {
+      if (variation.minSuggestedDuration) {
         setTimeout(() => {
           ressourceContainer.remove();
         }, variation.minSuggestedDuration * 1000);
       }
     }
-  }
+    return variation;
+  });
 }

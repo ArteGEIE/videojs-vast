@@ -2,7 +2,9 @@
 import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker, VASTParser } from '@dailymotion/vast-client';
-import { injectScriptTag, isNumeric, getLocalISOString, fetchVmapUrl } from './lib';
+import {
+  injectScriptTag, isNumeric, getLocalISOString, fetchVmapUrl, convertTimecodeToSeconds,
+} from './lib';
 import { playLinearAd, playNonLinearAd, playCompanionAd } from './modes';
 
 const Plugin = videojs.getPlugin('plugin');
@@ -23,7 +25,7 @@ class Vast extends Plugin {
       verificationTimeout: 2000,
       addCtaClickZone: true,
       debug: false,
-    }
+    };
 
     // Assign options that were passed in by the consumer
     this.options = Object.assign(defaultOptions, options);
@@ -44,25 +46,22 @@ class Vast extends Plugin {
     };
 
     // initialize videojs-contrib-ads
-    if(!this.player.ads) return;
+    if (!this.player.ads) return;
     this.player.ads(videojsContribAdsOptions);
 
-
-    if(options.vmapUrl) {
+    if (options.vmapUrl) {
       this.handleVMAP(options.vmapUrl);
     } else {
       this.disablePostroll();
-      (async() => {
+      (async () => {
         await this.handleVAST(options.vastUrl);
-        if(this.adsArray.length > 0) {
+        if (this.adsArray.length > 0) {
           this.addEventsListeners();
-          // has to be done outside of handleVAST() because not done at the same moment for VMAP case
+          // has to be done outside of handleVAST because not done at the same moment for VMAP case
           this.player.trigger('adsready');
         }
       })();
-      
     }
-    
   }
 
   disablePreroll() {
@@ -75,9 +74,9 @@ class Vast extends Plugin {
 
   setMacros(newMacros = undefined) {
     const { options } = this;
-    if(!newMacros) {
+    if (!newMacros) {
       // generate unique int from current timestamp
-      const cacheBuster = parseInt(Date.now().toString().slice(-8));
+      const cacheBuster = parseInt(Date.now().toString().slice(-8), 10);
       const ts = getLocalISOString(new Date());
       this.macros = {
         CACHEBUSTING: cacheBuster,
@@ -87,90 +86,77 @@ class Vast extends Plugin {
         // ADTYPE: '',
         // ADSERVINGID: '',
         // ADCATEGORIES: '',
-        LIMITADTRACKING: options.isLimitedTracking !== undefined ? options.isLimitedTracking : false, // defaults to false
-      }
+        LIMITADTRACKING: options.isLimitedTracking !== undefined
+          ? options.isLimitedTracking
+          : false, // defaults to false
+      };
     } else {
       this.macros = {
         ...this.macros,
         ...newMacros,
-      }
-    } 
+      };
+    }
   }
 
   async handleVMAP(vmapUrl) {
     try {
       const vmap = await fetchVmapUrl(vmapUrl);
       console.log('vmap ok', vmap);
-      if(vmap.adBreaks && vmap.adBreaks.length > 0) {
+      if (vmap.adBreaks && vmap.adBreaks.length > 0) {
         const vastParser = new VASTParser();
-        // some adBreaks have been found, trigger adsready
         this.addEventsListeners();
-        this.player.trigger('adsready');
-        this.watchForProgress = [];
-        vmap.adBreaks.map((adBreak) => {
-          // TODO: this switch may be simplified later
-          switch (adBreak.timeOffset) {
-            // preroll
-            case 'start':
-              if(adBreak.adSource.adTagURI.uri) {
-                // load vast preroll url
-                this.handleVAST(adBreak.adSource.adTagURI.uri);
-              }
-              if(adBreak.adSource.vastAdData) {
-                vastParser.parseVAST(adBreak.adSource.vastAdData)
-                  .then(parsedVAST => {
-                    // TODO: Do something with the parsed VAST response
-                  })
-                  .catch(err => {
-                    // TODO: Deal with the error
-                  });
-              }
-            break;
-            // postroll
-            case 'end' :
-              if(adBreak.adSource.adTagURI.uri) {
-                this.postRollUrl = adBreak.adSource.adTagURI.uri;
-              } else if(adBreak.adSource.vastAdData) {
-                vastParser.parseVAST(adBreak.adSource.vastAdData)
-                .then(parsedVAST => {
-                  // TODO: Do something with the parsed VAST response
-                  this.postRollData = parsedVAST;
-                })
-                .catch(err => {
-                  // TODO: Deal with the error
-                });
-              }
-            break;
-            default :
-              const adInfos = {
-                timeOffset: adBreak.timeOffset,
-                vastUrl: adBreak.adSource?.adTagURI?.uri,
-                vastData: adBreak.adSource.vastAdData,
-              }
-              this.watchForProgress.push(adInfos);
-            break;
-          }
-        });
-        // if no postroll, disable postroll
-        if(!Vast.hasPostroll(vmap.adBreaks)) {
-          this.disablePostroll();
-        }
-        if(!Vast.hasPreroll(vmap.adBreaks)) {
+        // handle preroll
+        const preroll = Vast.getPreroll(vmap.adBreaks);
+        console.log('preroll', preroll);
+        if (!preroll) {
           this.disablePreroll();
+        } else if (preroll.adSource.adTagURI && preroll.adSource.adTagURI.uri) {
+          // load vast preroll url
+          await this.handleVAST(preroll.adSource.adTagURI.uri);
+          // a preroll has been found, trigger adsready
+          this.player.trigger('adsready');
+        } else if (preroll.adSource.vastAdData) {
+          vastParser.parseVAST(preroll.adSource.vastAdData)
+            .then((parsedVAST) => {
+              console.log('parsedVAST', parsedVAST);
+              // TODO: Do something with the parsed VAST response
+            })
+            .catch((err) => {
+              console.log('error', err);
+              // TODO: Deal with the error
+            });
         }
-        if(this.watchForProgress.length > 0) {
+        // handle postroll
+        const postroll = Vast.getPostroll(vmap.adBreaks);
+        if (!postroll) {
+          this.disablePostroll();
+        } else if (postroll.adSource?.adTagURI?.uri) {
+          this.postRollUrl = postroll.adSource.adTagURI.uri;
+        } else if (postroll.adSource.vastAdData) {
+          vastParser.parseVAST(postroll.adSource.vastAdData)
+            .then((parsedVAST) => {
+              // TODO: Do something with the parsed VAST response
+              this.postRollData = parsedVAST;
+            })
+            .catch((err) => {
+              // TODO: Deal with the error
+            });
+        }
+        this.watchForProgress = Vast.getMidrolls(vmap.adBreaks);
+        console.log('this.watchForProgress', this.watchForProgress);
+        if (this.watchForProgress.length > 0) {
           // listen on regular content for midroll handling
           this.player.on('timeupdate', this.onProgress);
         }
       }
-    } catch(err) {
+    } catch (err) {
       // could not fetch vmap
       console.error(err);
     }
   }
 
   async handleVAST(vastUrl) {
-    console.log("handleVAST")
+    console.log('handleVAST');
     // Now let's fetch some adsonp
     this.vastClient = new VASTClient();
     try {
@@ -179,7 +165,7 @@ class Vast extends Plugin {
         resolveAll: true,
       });
       this.adsArray = response.ads ? response.ads : [];
-      if(this.adsArray.length === 0) {
+      if (this.adsArray.length === 0) {
         // Deal with the error
         const message = 'VastVjs: Empty VAST XML';
         this.player.trigger('vast.error', {
@@ -201,16 +187,19 @@ class Vast extends Plugin {
   addIcons(ad) {
     const { icons } = ad.linearCreative();
     // is there some icons ?
-    if(icons && icons.length > 0) {
-      icons.map((icon) => {
-        const { height, width, staticResource, htmlResource, iframeResource, xPosition, yPosition, iconClickThroughURLTemplate, duration } = icon;
+    if (icons && icons.length > 0) {
+      icons.forEach((icon) => {
+        const {
+          height, width, staticResource,
+          htmlResource, iframeResource, xPosition, yPosition, iconClickThroughURLTemplate, duration,
+        } = icon;
         let iconContainer = null;
-        if(staticResource) {
+        if (staticResource) {
           iconContainer = document.createElement('img');
           iconContainer.src = staticResource;
           iconContainer.height = height;
           iconContainer.width = width;
-        } else if(htmlResource) {
+        } else if (htmlResource) {
           iconContainer = document.createElement('div');
           iconContainer.innerHTML = icon.htmlResource;
         } else if (iframeResource) {
@@ -219,14 +208,14 @@ class Vast extends Plugin {
           iconContainer.height = height;
           iconContainer.width = width;
         }
-        
-        iconContainer.style.zIndex = "1";
-        iconContainer.style.position = "absolute";
+
+        iconContainer.style.zIndex = '1';
+        iconContainer.style.position = 'absolute';
         // positioning (Y)
         if (isNumeric(yPosition)) {
           iconContainer.style.top = `${yPosition}px`;
         } else {
-          iconContainer.style[['top', 'bottom'].includes(yPosition) ? yPosition : 'top'] = "3em";
+          iconContainer.style[['top', 'bottom'].includes(yPosition) ? yPosition : 'top'] = '3em';
         }
         // positioning (X)
         if (isNumeric(xPosition)) {
@@ -245,32 +234,37 @@ class Vast extends Plugin {
         this.domElements.push(iconContainer);
         this.player.el().appendChild(iconContainer);
         // remove icon after the given duration
-        if(duration !== -1) {
-          const durationInSeconds = duration.split(':').reverse().reduce((prev, curr, i) => prev + curr*Math.pow(60, i), 0);
+        if (duration !== -1) {
+          const durationInSeconds = duration.split(':').reverse().reduce((prev, curr, i) => prev + curr * 60 ** i, 0);
           setTimeout(() => {
             this.player.el().removeChild(iconContainer);
           }, durationInSeconds * 1000);
         }
-      })
+      });
     }
   }
 
   removeDomElements() {
     // remove icons
-    for (const domElement of this.domElements) {
+    this.domElements.forEach((domElement) => {
       domElement.remove();
-    }
+    });
   }
 
   readAd() {
     const currentAd = this.getNextAd();
+    console.log('currentAd', currentAd);
 
     // Retrieve the CTA URl to render
     this.ctaUrl = Vast.getBestCtaUrl(currentAd.linearCreative());
     this.debug('ctaUrl', this.ctaUrl);
 
     if (currentAd.hasLinearCreative()) {
-      this.linearVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.linearCreative());
+      this.linearVastTracker = new VASTTracker(
+        this.vastClient,
+        currentAd.ad,
+        currentAd.linearCreative(),
+      );
       this.linearVastTracker.on('firstQuartile', () => {
         this.debug('firstQuartile');
       });
@@ -292,23 +286,35 @@ class Vast extends Plugin {
         // Now for each verification script, we need to inject a script tag in the DOM and wait
         // for it to load
         let index = 0;
-        const scriptTagErrorCallback = () => {s
-           // track error
-           this.linearVastTracker.verificationNotExecuted(currentAd.ad.adVerifications[index].vendor, { REASON: 3 });
-           // load next script
-           scriptTagCallback();
-        }
         const scriptTagCallback = () => {
-          index = index + 1;
+          index += 1;
           if (index < currentAd.ad.adVerifications.length) {
-            injectScriptTag(currentAd.ad.adVerifications[index].resource, scriptTagCallback, scriptTagErrorCallback);
+            injectScriptTag(
+              currentAd.ad.adVerifications[index].resource,
+              scriptTagCallback,
+              // eslint-disable-next-line no-use-before-define
+              scriptTagErrorCallback,
+            );
           } else {
             // Once we are done with all verification tags, clear the timeout timer and play the ad
             clearTimeout(verificationTimeout);
             this.playLinearAd(currentAd.linearCreative());
           }
         };
-        injectScriptTag(currentAd.ad.adVerifications[index].resource, scriptTagCallback, scriptTagErrorCallback);
+        const scriptTagErrorCallback = () => {
+          // track error
+          this.linearVastTracker.verificationNotExecuted(
+            currentAd.ad.adVerifications[index].vendor,
+            { REASON: 3 },
+          );
+          // load next script
+          scriptTagCallback();
+        };
+        injectScriptTag(
+          currentAd.ad.adVerifications[index].resource,
+          scriptTagCallback,
+          scriptTagErrorCallback,
+        );
       } else {
         // No verification to import, just run the add
         this.playLinearAd(currentAd.linearCreative());
@@ -327,7 +333,7 @@ class Vast extends Plugin {
       // TODO: remove those listeners
       this.player.one(currentAd.hasLinearCreative() ? 'adplaying' : 'playing', () => {
         this.companionVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.companionCreative(), 'CompanionAd');
-        this.playCompanionAd(currentAd.companionCreative())
+        this.playCompanionAd(currentAd.companionCreative());
       });
     }
   }
@@ -339,7 +345,7 @@ class Vast extends Plugin {
   * A linear add for example can come with a companion ad and both can should be displayed.
   */
   getNextAd() {
-    if(this.adsArray.length === 0) {
+    if (this.adsArray.length === 0) {
       return null;
     }
     const nextAd = this.adsArray.shift();
@@ -350,86 +356,106 @@ class Vast extends Plugin {
       hasCompanionCreative: () => nextAd.creatives.find((creative) => creative.type === 'companion') !== undefined,
       companionCreative: () => nextAd.creatives.filter((creative) => creative.type === 'companion')[0],
       hasNonlinearCreative: () => nextAd.creatives.find((creative) => creative.type === 'nonlinear') !== undefined,
-      nonlinearCreative: () => nextAd.creatives.filter((creative) => creative.type === 'nonlinear')[0]
-    }
+      nonlinearCreative: () => nextAd.creatives.filter((creative) => creative.type === 'nonlinear')[0],
+    };
   }
 
   onAdPlay = () => {
     this.debug('adplay');
     // don't track the very first play to avoid sending resume tracker event
-    if(parseInt(this.player.currentTime(), 10) > 0) {
-      this.linearVastTracker.setPaused(false, { 
+    if (parseInt(this.player.currentTime(), 10) > 0) {
+      this.linearVastTracker.setPaused(false, {
         ...this.macros,
         ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
       });
     }
-  }
+  };
+
   onAdPause = () => {
     this.debug('adpause');
     // don't track the pause event triggered before complete
     if (this.player.duration() - this.player.currentTime() > 0.2) {
-      this.linearVastTracker.setPaused(true, { 
+      this.linearVastTracker.setPaused(true, {
         ...this.macros,
         ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
       });
     }
-  }
+  };
+
   // Track timeupdate-related events
   onAdTimeUpdate = () => {
     // Set progress to track automated trackign events
     this.linearVastTracker.setProgress(this.player.currentTime(), this.macros);
     this.player.trigger('vast.time', { position: this.player.currentTime(), currentTime: this.player.currentTime(), duration: this.player.duration() });
-  }
+  };
 
   // track on regular content progress
-  onProgress = () => {
-    if(this.watchForProgress && this.watchForProgress.length > 0) {
-      console.log('time', this.player.currentTime())
+  onProgress = async () => {
+    if (this.watchForProgress && this.watchForProgress.length > 0) {
+      const timeOffsetInSeconds = convertTimecodeToSeconds(this.watchForProgress[0].timeOffset);
+      if (this.player.currentTime() > timeOffsetInSeconds) {
+        const nextAd = this.watchForProgress.shift();
+        console.log('this.watchForProgress', this.watchForProgress, nextAd);
+        if (nextAd.vastUrl) {
+          await this.handleVAST(nextAd.vastUrl);
+          this.readAd();
+        } else if (nextAd.vastData) {
+          // TODO: handle inline vast data
+        }
+      }
     }
-  }
+  };
 
   onFirstPlay = () => {
     this.debug('first play');
     // Track the first timeupdate event - used for impression tracking
-    
-  }
+  };
 
   onAdVolumeChange = () => {
     this.debug('volume');
-    if(!this.linearVastTracker){
+    if (!this.linearVastTracker) {
       return false;
     }
     // Track the user muting or unmuting the video
-    this.linearVastTracker.setMuted(this.player.muted(), { 
+    this.linearVastTracker.setMuted(this.player.muted(), {
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
-  }
+    return true;
+  };
 
   onAdFullScreen = (evt, data) => {
     this.debug('fullscreen');
+    if (!this.linearVastTracker) {
+      return false;
+    }
     // Track skip event
     this.linearVastTracker.setFullscreen(data.state);
-  }
+    return true;
+  };
 
   // Track when user closes the video
   onUnload = () => {
-    this.linearVastTracker.close({ 
+    if (!this.linearVastTracker) {
+      return false;
+    }
+
+    this.linearVastTracker.close({
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
     this.removeEventsListeners();
     return null;
-  }
+  };
 
   // Notify the player if we reach a timeout while trying to load the ad
   onAdTimeout = () => {
     this.debug('adtimeout');
-    //trigger a tracker error
-    if(this.linearVastTracker) {
+    // trigger a tracker error
+    if (this.linearVastTracker) {
       this.linearVastTracker.error({
         ...this.macros,
-        ERRORCODE: 301 // timeout of VAST URI
+        ERRORCODE: 301, // timeout of VAST URI
       });
     }
     console.error('VastVjs: Timeout');
@@ -437,7 +463,7 @@ class Vast extends Plugin {
       message: 'VastVjs: Timeout',
     });
     this.removeEventsListeners();
-  }
+  };
 
   // send event when ad is playing to remove loading spinner
   onAdStart = () => {
@@ -449,112 +475,113 @@ class Vast extends Plugin {
       adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
     });
     // Track the impression of an ad
-    this.linearVastTracker.load({ 
+    this.linearVastTracker.load({
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
 
-    this.linearVastTracker.trackImpression({ 
+    this.linearVastTracker.trackImpression({
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
-    this.linearVastTracker.overlayViewDuration(this.linearVastTracker.convertToTimecode(this.player.currentTime()), this.macros);
+    this.linearVastTracker.overlayViewDuration(
+      this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      this.macros,
+    );
 
-     // make timeline not clickable
-     this.player.controlBar.progressControl.disable();
+    // make timeline not clickable
+    this.player.controlBar.progressControl.disable();
 
-    if(this.options.addCtaClickZone) {
+    if (this.options.addCtaClickZone) {
       // ad the cta click
       this.ctaDiv = document.createElement('div');
-      this.ctaDiv.style.cssText = "position: absolute; bottom:3em; left: 0; right: 0;top: 0;";
+      this.ctaDiv.style.cssText = 'position: absolute; bottom:3em; left: 0; right: 0;top: 0;';
       this.ctaDiv.addEventListener('click', () => {
         this.player.pause();
         this.adClickCallback(this.ctaUrl);
       });
       this.player.el().appendChild(this.ctaDiv);
     }
-  }
+  };
 
   onAdError = (evt) => {
     this.debug('aderror');
-    const error = this.player.error();
-    //trigger a tracker error
+    // const error = this.player.error();
+    // trigger a tracker error
     this.linearVastTracker.error({
       ...this.macros,
-      ERRORCODE: 900 // undefined error, to be improved
+      ERRORCODE: 900, // undefined error, to be improved
     });
 
     // Trigger an event when the ad is finished to notify the player consumer
     this.player.trigger('vast.error', {
       message: evt,
-      tag: options.vastUrl,
+      tag: this.options.vastUrl,
     });
 
-    // pods is not ended go ahead
-    if(this.adsArray.length === 0 ) {
+    // no more ads (end of preroll, adpods or midroll)
+    if (this.adsArray.length === 0) {
       this.resetPlayer();
-    } else {
+    } else { // pods is not ended go ahead
       this.readAd();
     }
-  }
+  };
 
   onReadyForPreroll = () => {
     this.debug('readyforpreroll');
     this.readAd();
-  }
-
+  };
 
   onReadyForPostroll = async () => {
     this.debug('readyforpostroll');
-    if(this.postRollUrl) {
+    if (this.postRollUrl) {
       await this.handleVAST(this.postRollUrl);
       this.readAd();
     } else if (this.postRollData) {
       // handle inline data
     }
-    
-  }
+  };
 
   onEnded = () => {
     this.removeEventsListeners();
-  }
+  };
 
   onSkip = () => {
     this.debug('skip');
-    
+
     // Trigger an event when the ad is finished to notify the player consumer
     this.player.trigger('vast.skip');
-    
+
     // Track skip event
-    this.linearVastTracker.skip({ 
+    this.linearVastTracker.skip({
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
 
-    if(this.options.addCtaClickZone) {
+    if (this.options.addCtaClickZone) {
       // remove cta
       this.ctaDiv.remove();
     }
 
     // delete icons, companions or nonlinear elements
     this.removeDomElements();
-    
-    // pods is not ended go ahead
-    if(this.adsArray.length === 0 ) {
+
+    // no more ads (end of preroll, adpods or midroll)
+    if (this.adsArray.length === 0) {
       this.resetPlayer();
     }
-  }
+  };
 
   onAdEnded = () => {
     this.debug('adended');
 
-    if(this.options.addCtaClickZone) {
+    if (this.options.addCtaClickZone) {
       // remove cta
       this.ctaDiv.remove();
     }
 
     // Track the end of an ad
-    this.linearVastTracker.complete({ 
+    this.linearVastTracker.complete({
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
@@ -562,13 +589,13 @@ class Vast extends Plugin {
     // delete icons, companions or nonlinear elements
     this.removeDomElements();
 
-    // pods is not ended go ahead
-    if(this.adsArray.length === 0 ) {
+    // no more ads (end of preroll, adpods or midroll)
+    if (this.adsArray.length === 0) {
       this.resetPlayer();
-    } else {
+    } else { // pods is not ended go ahead
       this.readAd();
     }
-  }
+  };
 
   resetPlayer() {
     // Finish ad mode so that regular content can resume
@@ -628,16 +655,14 @@ class Vast extends Plugin {
     this.player.trigger('vast.click');
     window.open(ctaUrl, '_blank');
     // Track when a user clicks on an ad
-    this.linearVastTracker.click(null, { 
+    this.linearVastTracker.click(null, {
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
-  }
+  };
 
-
-
-  getCloseButton(clickCallback) {
-    const closeButton  = document.createElement('button');
+  static getCloseButton(clickCallback) {
+    const closeButton = document.createElement('button');
     closeButton.addEventListener('click', clickCallback);
     closeButton.style.width = '20px';
     closeButton.style.height = '20px';
@@ -669,25 +694,25 @@ class Vast extends Plugin {
   */
   static getBestMediaFile = (mediaFilesAvailable) => {
     // select the best media file based on internet bandwidth and screen size/resolution
-    const videojsVhs = localStorage.getItem('videojs-vhs')
-    const bandwidth = videojsVhs ? JSON.parse(videojsVhs).bandwidth : undefined
+    const videojsVhs = localStorage.getItem('videojs-vhs');
+    const bandwidth = videojsVhs ? JSON.parse(videojsVhs).bandwidth : undefined;
 
     let bestMediaFile = mediaFilesAvailable[0];
 
     if (mediaFilesAvailable && bandwidth) {
-      const height = window.screen.height;
-      const width = window.screen.width;
+      const { height } = window.screen;
+      const { width } = window.screen;
 
       const result = mediaFilesAvailable
         .sort((a, b) => ((Math.abs(a.bitrate - bandwidth) - Math.abs(b.bitrate - bandwidth))
           || (Math.abs(a.width - width) - Math.abs(b.width - width))
-          || (Math.abs(a.height - height) - Math.abs(b.height - height))))
+          || (Math.abs(a.height - height) - Math.abs(b.height - height))));
 
-      bestMediaFile = result[0]
+      [bestMediaFile] = result;
     }
 
     return bestMediaFile;
-  }
+  };
 
   /*
   * This method is responsible for choosing the best URl to redirect the user to when he clicks
@@ -700,25 +725,42 @@ class Vast extends Plugin {
       return creative.videoClickThroughURLTemplate.url;
     }
     return false;
-  }
+  };
 
-  static hasPostroll = (adBreaks) => {
-    if(adBreaks) {
-      return adBreaks.find((adBreak) => ['end', '100%'].includes(adBreak.timeOffset)) !== undefined;
+  static getMidrolls = (adBreaks) => {
+    const midrolls = [];
+    if (adBreaks) {
+      return adBreaks
+        .filter((adBreak) => !['start', '0%', '00:00:00', 'end', '100%'].includes(adBreak.timeOffset))
+        .reduce((prev, current) => ([
+          ...prev,
+          {
+            timeOffset: current.timeOffset,
+            vastUrl: current.adSource?.adTagURI?.uri,
+            vastData: current.adSource.vastAdData,
+          },
+        ]), []);
+    }
+    return midrolls;
+  };
+
+  static getPreroll = (adBreaks) => {
+    if (adBreaks) {
+      return adBreaks.filter((adBreak) => ['start', '0%', '00:00:00'].includes(adBreak.timeOffset))[0];
     }
     return false;
-  }
+  };
 
-  static hasPreroll = (adBreaks) => {
-    if(adBreaks) {
-      return adBreaks.find((adBreak) => ['start', '0%', '00:00:00'].includes(adBreak.timeOffset)) !== undefined;
+  static getPostroll = (adBreaks) => {
+    if (adBreaks) {
+      return adBreaks.filter((adBreak) => ['end', '100%'].includes(adBreak.timeOffset))[0];
     }
     return false;
-  }
+  };
 
   debug(msg, data = undefined) {
-    if(!this.options.debug) {
-      return
+    if (!this.options.debug) {
+      return;
     }
     console.info('videojs-vast ---', msg, data ?? '');
   }
