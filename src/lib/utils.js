@@ -12,9 +12,18 @@ export const getLocalISOString = (date) => {
   return `${isoString.slice(0, -1)}${offset > 0 ? '-' : '+'}${String(Math.floor(offsetAbs / 60)).padStart(2, '0')}`;
 };
 
-export const convertTimecodeToSeconds = (timecode) => {
+export const convertTimeOffsetToSeconds = (timecode, duration = null) => {
+  // convert timeoffset in percent
+  if (duration && timecode.includes('%')) {
+    const percent = timecode.replace('%', '');
+    return (duration / 100) * percent;
+  }
+  // convert timeoffset in seconds from the start
+  if (timecode.includes('#')) {
+    return timecode.replace('#', '');
+  }
+  // convert timeoffset in timecode
   const [time, ms] = timecode.split('.');
-  console.log('timecode', typeof timecode, time);
   const [hours, minutes, seconds] = time.split(':');
   return Number(`${parseInt(hours, 10) * 3600 + parseInt(minutes, 10) * 60 + parseInt(seconds, 10)}.${ms}`);
 };
