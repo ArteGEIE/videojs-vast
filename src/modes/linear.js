@@ -8,7 +8,9 @@ export function playLinearAd(creative) {
   const mediaFile = Vast.getBestMediaFile(creative.mediaFiles);
 
   // Start ad mode
-  this.player.ads.startLinearAdMode();
+  if (!this.player.ads.inAdBreak()) {
+    this.player.ads.startLinearAdMode();
+  }
 
   // Trigger an event when the ad starts playing
   this.player.trigger('vast.playAttempt');

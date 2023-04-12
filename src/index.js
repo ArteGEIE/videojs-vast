@@ -20,6 +20,7 @@ class Vast extends Plugin {
       vmapUrl: false,
       verificationTimeout: 2000,
       addCtaClickZone: true,
+      addSkipButton: true,
       debug: false,
     };
 
@@ -151,6 +152,7 @@ class Vast extends Plugin {
         this.debug('midpoint');
       });
       this.addIcons(currentAd);
+      this.addSkipButton(currentAd.linearCreative());
       // We now check if verification is needed or not, if it is, then we import the
       // verification script with a timeout trigger. If it is not, then we simply display the ad
       // by calling playAd
@@ -372,7 +374,7 @@ class Vast extends Plugin {
     this.player.controlBar.progressControl.disable();
 
     if (this.options.addCtaClickZone) {
-      // ad the cta click
+      // add the cta click
       this.ctaDiv = document.createElement('div');
       this.ctaDiv.style.cssText = 'position: absolute; bottom:3em; left: 0; right: 0;top: 0;';
       this.ctaDiv.addEventListener('click', () => {
@@ -382,6 +384,36 @@ class Vast extends Plugin {
       this.player.el().appendChild(this.ctaDiv);
     }
   };
+
+  addSkipButton(creative) {
+    this.debug('addSkipButton');
+    if (this.options.addSkipButton && creative.skipDelay > 0) {
+      const { skipDelay } = creative;
+      let skipRemainingTime = Math.round(skipDelay - this.player.currentTime());
+      let isSkippable = skipRemainingTime < 1;
+      // add the skip button
+      const skipButtonDiv = document.createElement('div');
+      skipButtonDiv.id = 'videojs-vast-skipButton';
+      skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 1; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none;';
+      skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
+      this.domElements.push(skipButtonDiv);
+      this.player.el().appendChild(skipButtonDiv);
+      // update time
+      const interval = setInterval(() => {
+        skipRemainingTime = Math.round(skipDelay - this.player.currentTime());
+        isSkippable = skipRemainingTime < 1;
+        if (isSkippable) {
+          skipButtonDiv.style.cursor = 'pointer';
+          skipButtonDiv.style.pointerEvents = 'auto';
+          skipButtonDiv.addEventListener('click', () => {
+            this.player.trigger('skip');
+          });
+          clearInterval(interval);
+        }
+        skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
+      }, 1000);
+    }
+  }
 
   onAdError = (evt) => {
     this.debug('aderror');
@@ -450,6 +482,8 @@ class Vast extends Plugin {
     // no more ads (end of preroll, adpods or midroll)
     if (this.adsArray.length === 0) {
       this.resetPlayer();
+    } else {
+      this.readAd();
     }
   };
 
