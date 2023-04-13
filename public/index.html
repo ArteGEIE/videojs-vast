@@ -10,7 +10,6 @@
     preload="auto"
     width="640"
     height="360"
-    data-setup="{}"
   >
     <source src="https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_30MB.mp4" type="video/mp4" />
     <p class="vjs-no-js">
@@ -21,5 +20,17 @@
       >
     </p>
   </video>
+  <p><select name='vastUrl' id="vastUrl" onchange="document.location.href = '?vastUrl=' + this.value">
+    <option value=''>Select an adType</option>
+    <option value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Inline_Simple.xml'>Inline</option>
+    <option value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Wrapper_Tag-test.xml'>Wrapper</option>
+    <option value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/IconClickFallbacks.xml'>Icon</option>
+    <option value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Inline_Companion_Tag-test.xml'>Companion</option>
+    <option value='https://raw.githubusercontent.com/dailymotion/vast-client-js/b5a72b04226a6880da1e00191033edb150f6b956/test/vastfiles/wrapper-ad-pod.xml'>Adpod</option>
+    <option value='https://raw.githubusercontent.com/dailymotion/vast-client-js/b5a72b04226a6880da1e00191033edb150f6b956/test/vastfiles/empty-no-ad.xml'>Empty VAST</option>
+  </select></p>
   <script src="demo.js"></script>
+  <script>
+    document.getElementById('vastUrl').value = encodeURI(getURLParameter('vastUrl')) ;
+  </script>
 </body>
