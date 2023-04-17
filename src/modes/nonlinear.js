@@ -33,7 +33,11 @@ export function playNonLinearAd(creative) {
         }, variation.minSuggestedDuration * 1000);
       }
       ressourceContainer.appendChild(ressource);
-      this.player.el().appendChild(ressourceContainer);
+      if (variation.adSlotID) {
+        document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
+      } else {
+        this.player.el().appendChild(ressourceContainer);
+      }
     }
 
     // html
@@ -50,7 +54,11 @@ export function playNonLinearAd(creative) {
       ressourceContainer.style.maxHeight = variation.expandedHeight;
       ressourceContainer.innerHTML = variation.htmlResource;
 
-      this.player.el().appendChild(ressourceContainer);
+      if (variation.adSlotID) {
+        document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
+      } else {
+        this.player.el().appendChild(ressourceContainer);
+      }
       if (variation.minSuggestedDuration) {
         setTimeout(() => {
           ressourceContainer.remove();
@@ -72,7 +80,11 @@ export function playNonLinearAd(creative) {
       ressourceContainer.style.maxHeight = variation.expandedHeight;
 
       ressourceContainer.src = variation.iframeResource;
-      this.player.el().appendChild(ressourceContainer);
+      if (variation.adSlotID) {
+        document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
+      } else {
+        this.player.el().appendChild(ressourceContainer);
+      }
       if (variation.minSuggestedDuration) {
         setTimeout(() => {
           ressourceContainer.remove();

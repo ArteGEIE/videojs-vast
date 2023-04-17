@@ -34,7 +34,9 @@
     "build": "yarn build:cjs && yarn build:esm",
     "lint": "eslint ./src",
     "start": "concurrently \"serve -l 3000 public\" \"watch --interval=1 'yarn bundle:demo' ./src/\"",
-    "test": "jest --coverage",
+    "test": "npm run test:e2e",
+    "test:e2e": "npm run start && wait-on http://localhost:3000/ & cypress run --browser chrome",
+    "test:open": "cypress open",
     "prepublishOnly": "yarn test; yarn build; yarn bundle:demo"
   },
   "dependencies": {
@@ -44,16 +46,16 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.20.2",
-    "babel-jest": "^29.3.1",
     "concurrently": "^8.0.1",
+    "cypress": "^12.5.1",
     "esbuild": "^0.15.0",
     "eslint": "^7.32.0 || ^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.2",
-    "jest": "^26.0.0",
     "regenerator-runtime": "^0.13.7",
     "serve": "^14.2.0",
     "video.js": "^8.0.4",
+    "wait-on": "^7.0.1",
     "watch": "^0.13.0",
     "yargs": "^17.5.1"
   },

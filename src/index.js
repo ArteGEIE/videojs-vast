@@ -109,6 +109,7 @@ class Vast extends Plugin {
       });
       this.adsArray = response.ads ?? [];
       if (this.adsArray.length === 0) {
+        onError?.();
         // Deal with the error
         const message = 'VastVjs: Empty VAST XML';
         this.player.trigger('vast.error', {
