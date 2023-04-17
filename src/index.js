@@ -22,6 +22,8 @@ class Vast extends Plugin {
       addCtaClickZone: true,
       addSkipButton: true,
       debug: false,
+      timeout: 5000,
+      isLimitedTracking: false,
     };
 
     // Assign options that were passed in by the consumer
@@ -39,7 +41,7 @@ class Vast extends Plugin {
 
     const videojsContribAdsOptions = {
       debug: options.debug !== undefined ? options.debug : false,
-      timeout: options.timeout !== undefined ? options.timeout : 5000,
+      timeout: options.timeout,
     };
 
     // initialize videojs-contrib-ads
@@ -87,9 +89,7 @@ class Vast extends Plugin {
         // ADTYPE: '',
         // ADSERVINGID: '',
         // ADCATEGORIES: '',
-        LIMITADTRACKING: options.isLimitedTracking !== undefined
-          ? options.isLimitedTracking
-          : false, // defaults to false
+        LIMITADTRACKING: options.isLimitedTracking, // defaults to false
       };
     } else {
       this.macros = {
