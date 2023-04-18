@@ -40,8 +40,8 @@ class Vast extends Plugin {
     this.iconContainers = [];
 
     const videojsContribAdsOptions = {
-      debug: options.debug !== undefined ? options.debug : false,
-      timeout: options.timeout,
+      debug: this.options.debug,
+      timeout: this.options.timeout,
     };
 
     // initialize videojs-contrib-ads
