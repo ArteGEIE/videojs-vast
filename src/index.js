@@ -84,12 +84,15 @@ class Vast extends Plugin {
       this.macros = {
         CACHEBUSTING: cacheBuster,
         TIMESTAMP: ts,
+        PAGEURL: (window.location !== window.parent.location)
+          ? document.referrer
+          : document.location.href,
         // PODSEQUENCE: '',
         // UNIVERSALADID: '',
         // ADTYPE: '',
         // ADSERVINGID: '',
         // ADCATEGORIES: '',
-        LIMITADTRACKING: options.isLimitedTracking, // defaults to false
+        LIMITADTRACKING: options.isLimitedTracking,
       };
     } else {
       this.macros = {
@@ -171,6 +174,9 @@ class Vast extends Plugin {
         // Now for each verification script, we need to inject a script tag in the DOM and wait
         // for it to load
         let index = 0;
+        this.setMacros({
+          OMIDPARTNER: `${currentAd.ad.adVerifications[index].vendor ?? 'unknown'}`,
+        });
         const scriptTagCallback = () => {
           index += 1;
           if (index < currentAd.ad.adVerifications.length) {
