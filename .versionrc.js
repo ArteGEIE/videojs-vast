@@ -57,7 +57,7 @@ const config = () => ({
     ]),
     postbump: oneLiner(' && ')([
       'git add ./package*.json',
-      'git add package.lock',
+      'git add package-lock.json',
       isPrerelease ? '' : 'yarn ci:changelog',
       isPrerelease ? '' : 'git add ./CHANGELOG.md',
       `git commit -m "chore(${isPrerelease ? 'pre' : ''}release): ${nextVersion}"`,
@@ -71,7 +71,7 @@ const config = () => ({
       isPrerelease ? '' : `git merge --no-commit --no-ff ${releaseBranch}`,
       isPrerelease ? '' : 'git merge --abort',
       isPrerelease ? '' : `git checkout ${releaseBranch}`,
-      'yarn publish packages/arteVp',
+      'yarn publish',
       `git push origin HEAD:${releaseBranch}`,
 
       // <-- RELEASE ONLY, WE CAN MERGE DELETE BRANCHES AND TAG
