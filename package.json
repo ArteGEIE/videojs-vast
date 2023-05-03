@@ -34,6 +34,7 @@
     "build": "yarn build:cjs && yarn build:esm",
     "github_release": "babel-node github-release.mjs",
     "lint": "eslint ./src",
+    "release": "standard-version",
     "start": "concurrently \"serve -l 3000 public\" \"watch --interval=1 'yarn bundle:demo' ./src/\"",
     "test": "npm run test:e2e",
     "test:e2e": "npm run start && wait-on http://localhost:3000/ & cypress run --browser chrome",
