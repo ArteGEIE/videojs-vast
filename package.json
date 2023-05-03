@@ -1,6 +1,6 @@
 {
   "name": "@arte/videojs-vast",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.2",
   "main": "./dist/cjs/index.js",
   "module": "./dist/mjs/index.js",
   "license": "MIT",
@@ -62,7 +62,6 @@
     "semver": "^7.5.0",
     "serve": "^14.2.0",
     "standard-version": "^9.5.0",
-
     "video.js": "^8.0.4",
     "wait-on": "^7.0.1",
     "watch": "^0.13.0",
