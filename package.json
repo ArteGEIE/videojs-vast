@@ -32,13 +32,16 @@
     "build:local": "yarn build && yalc push",
     "bundle:demo": "esbuild ./src/demo.js --bundle --outfile=public/demo.js --minify --sourcemap",
     "build": "yarn build:cjs && yarn build:esm",
+    "changelog": "conventional-changelog --preset angular --config changelog.config.js",
+    "ci:changelog": "yarn changelog -- --same-file --infile CHANGELOG.md && yarn transform:changelog",
     "github_release": "babel-node github-release.mjs",
     "lint": "eslint ./src",
     "release": "standard-version",
     "start": "concurrently \"serve -l 3000 public\" \"watch --interval=1 'yarn bundle:demo' ./src/\"",
     "test": "npm run test:e2e",
     "test:e2e": "wait-on http://localhost:3000/ & cypress run --browser chrome",
-    "test:open": "cypress open"
+    "test:open": "cypress open",
+    "transform:changelog": "node changelog.config.js --transform"
   },
   "dependencies": {
     "@dailymotion/vast-client": "^4.0.0",
@@ -48,6 +51,8 @@
   "devDependencies": {
     "@babel/preset-env": "^7.20.2",
     "concurrently": "^8.0.1",
+    "conventional-changelog-cli": "^2.2.2",
+    "conventional-commits-parser": "^3.2.4",
     "cypress": "^12.5.1",
     "esbuild": "^0.15.0",
     "eslint": "^7.32.0 || ^8.2.0",
