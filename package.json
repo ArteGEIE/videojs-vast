@@ -37,7 +37,7 @@
     "release": "standard-version",
     "start": "concurrently \"serve -l 3000 public\" \"watch --interval=1 'yarn bundle:demo' ./src/\"",
     "test": "npm run test:e2e",
-    "test:e2e": "npm run start && wait-on http://localhost:3000/ & cypress run --browser chrome",
+    "test:e2e": "wait-on http://localhost:3000/ & cypress run --browser chrome",
     "test:open": "cypress open"
   },
   "dependencies": {
