@@ -1,1 +1,8 @@
 node_modules
+src
+cypress
+public
+cypress.config.js
+esbuild.js
+.gitignore
+coverage
