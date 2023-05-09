@@ -64,7 +64,7 @@
     "standard-version": "^9.5.0",
     "video.js": "^8.3.0",
     "wait-on": "^7.0.1",
-    "watch": "^1.0.2",
+    "watch": "^0.13.0",
     "yargs": "^17.7.2"
   },
   "description": "Open Source VAST plugin for VideoJS",
