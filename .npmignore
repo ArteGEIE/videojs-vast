@@ -1,8 +1,13 @@
 node_modules
 src
+docs
 cypress
 public
 cypress.config.js
 esbuild.js
 .gitignore
 coverage
+.eslintrc.js
+.versionrc.js
+changelog.config.js
+github-release.mjs
