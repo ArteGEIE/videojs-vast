@@ -122,8 +122,8 @@ Here's a small step-by-step to run the plugin locally.
 
 * Install Yalc globally with ```npm i yalc -g``` or, using yarn: ```yarn global add yalc```
 * Clone the repository with ```git clone https://github.com/ArteGEIE/videojs-vast.git```
-* Install the plugin dependencies with ```npm install``` or ```yarn```
-* Run the plugin in watch mode with ```npm start``` or ```yarn start```, leave this terminal open while you are working on the plugin's code
+* Install the plugin dependencies with ```npm install```
+* Run the plugin in watch mode with ```npm start```, leave this terminal open while you are working on the plugin's code
 * In your local project, run ```yalc add videojs-vast``` to install the plugin from your local repository
 * Run your project normally, it will consume the local version of the plugin
 
