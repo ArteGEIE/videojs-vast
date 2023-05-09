@@ -58,6 +58,8 @@ const config = () => ({
     postbump: oneLiner(' && ')([
       'git add ./package*.json',
       'git add package-lock.json',
+      'git add docs/demo.js',
+      'git add docs/demo.js.map',
       isPrerelease ? '' : 'npm run ci:changelog',
       isPrerelease ? '' : 'git add ./CHANGELOG.md',
       `git commit -m "chore(${isPrerelease ? 'pre' : ''}release): ${nextVersion}"`,
