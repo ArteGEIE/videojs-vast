@@ -44,29 +44,29 @@
     "transform:changelog": "node changelog.config.js --transform"
   },
   "dependencies": {
-    "@dailymotion/vast-client": "^4.0.0",
+    "@dailymotion/vast-client": "^4.0.1",
     "@dailymotion/vmap": "^3.3.1",
-    "videojs-contrib-ads": "^7.1.0"
+    "videojs-contrib-ads": "^7.2.0"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.20.2",
+    "@babel/preset-env": "^7.21.5",
     "concurrently": "^8.0.1",
     "conventional-changelog-cli": "^2.2.2",
     "conventional-commits-parser": "^3.2.4",
-    "cypress": "^12.5.1",
-    "esbuild": "^0.15.0",
-    "eslint": "^7.32.0 || ^8.2.0",
+    "cypress": "^12.11.0",
+    "esbuild": "^0.17.18",
+    "eslint": "^8.40.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.25.2",
-    "regenerator-runtime": "^0.13.7",
+    "eslint-plugin-import": "^2.27.5",
+    "regenerator-runtime": "^0.13.11",
     "semver": "^7.5.0",
     "serve": "^14.2.0",
     "standard-version": "^9.5.0",
 
-    "video.js": "^8.0.4",
+    "video.js": "^8.3.0",
     "wait-on": "^7.0.1",
-    "watch": "^0.13.0",
-    "yargs": "^17.5.1"
+    "watch": "^1.0.2",
+    "yargs": "^17.7.2"
   },
   "description": "Open Source VAST plugin for VideoJS",
   "repository": {
