@@ -11,10 +11,10 @@ const { version } = require('./package.json');
 
 
 // Check if the github username and token are defined
-const githubUsername = process.env.GITHUB_USERNAME;
-const githubToken = process.env.GITHUB_USER_TOKEN;
+const githubUsername = process.env.ARTE_GITHUB_USERNAME;
+const githubToken = process.env.ARTE_GITHUB_NPM_TOKEN;
 if (githubUsername === undefined || githubToken === undefined) {
-    console.error('Env variable GITHUB_USERNAME or GITHUB_USER_TOKEN not found');
+    console.error('Env variable ARTE_GITHUB_USERNAME or ARTE_GITHUB_NPM_TOKEN not found');
     process.exit(1);
 }
 
