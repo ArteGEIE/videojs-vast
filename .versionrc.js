@@ -11,10 +11,10 @@ const { version } = require('./package.json');
 
 
 // Check if the github username and token are defined
-const githubUsername = process.env.GITHUB_USERNAME;
-const githubToken = process.env.GITHUB_USER_TOKEN;
+const githubUsername = process.env.ARTE_GITHUB_USERNAME;
+const githubToken = process.env.ARTE_GITHUB_NPM_TOKEN;
 if (githubUsername === undefined || githubToken === undefined) {
-    console.error('Env variable GITHUB_USERNAME or GITHUB_USER_TOKEN not found');
+    console.error('Env variable ARTE_GITHUB_USERNAME or ARTE_GITHUB_NPM_TOKEN not found');
     process.exit(1);
 }
 
@@ -49,16 +49,18 @@ const config = () => ({
       `git checkout ${releaseBranch}`,
       `git fetch origin`,
       // now checking code
-      'yarn',
-      'yarn lint',
-      'yarn build',
-      'yarn bundle:demo',
-      'yarn test',
+      'npm ci',
+      'npm run lint',
+      'npm run build',
+      'npm run bundle:demo',
+      'npm run test',
     ]),
     postbump: oneLiner(' && ')([
       'git add ./package*.json',
       'git add package-lock.json',
-      isPrerelease ? '' : 'yarn ci:changelog',
+      'git add docs/demo.js',
+      'git add docs/demo.js.map',
+      isPrerelease ? '' : 'npm run ci:changelog',
       isPrerelease ? '' : 'git add ./CHANGELOG.md',
       `git commit -m "chore(${isPrerelease ? 'pre' : ''}release): ${nextVersion}"`,
       // now checking conflicts
@@ -71,7 +73,7 @@ const config = () => ({
       isPrerelease ? '' : `git merge --no-commit --no-ff ${releaseBranch}`,
       isPrerelease ? '' : 'git merge --abort',
       isPrerelease ? '' : `git checkout ${releaseBranch}`,
-      'yarn publish',
+      'npm publish',
       `git push origin HEAD:${releaseBranch}`,
 
       // <-- RELEASE ONLY, WE CAN MERGE DELETE BRANCHES AND TAG
@@ -92,7 +94,7 @@ const config = () => ({
     posttag: oneLiner(' && ')([
       // push tag
       `git push origin ${nextVersion}`,
-      'yarn github_release',
+      'npm run github_release',
       // merge back in develop at the very end of the process
       'git checkout develop',
       'git merge master',
