@@ -1,6 +1,6 @@
 {
   "name": "@arte/videojs-vast",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "./dist/cjs/index.js",
   "module": "./dist/mjs/index.js",
   "license": "Apache-2.0",
@@ -49,6 +49,7 @@
     "videojs-contrib-ads": "^7.2.0"
   },
   "devDependencies": {
+    "@babel/node": "^7.20.7",
     "@babel/preset-env": "^7.21.5",
     "concurrently": "^8.0.1",
     "conventional-changelog-cli": "^2.2.2",
@@ -70,7 +71,7 @@
   "description": "Open Source VAST plugin for VideoJS",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArteGEIE/videojs-vast.git"
+    "url": "https://github.com/ArteGEIE/videojs-vast.git"
   },
   "keywords": [
     "vast"
