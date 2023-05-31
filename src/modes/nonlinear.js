@@ -14,7 +14,6 @@ export function playNonLinearAd(creative) {
 
       const ressource = document.createElement('img');
       ressource.addEventListener('click', () => {
-        console.info('ressource clicked');
         window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
         this.nonLinearVastTracker.click(null, this.macros);
       });
