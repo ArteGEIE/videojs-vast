@@ -2,28 +2,28 @@
 <vmap:AdBreak timeOffset="start" breakType="linear" breakId="preroll">
 <vmap:AdSource id="preroll-ads" allowMultipleAds="false" followRedirects="true">
 <vmap:AdTagURI templateType="vast3">
-https://opencdn.b-cdn.net/pub/5.0/e-v-1/preroll.xml
+/fixtures/vast.xml
 </vmap:AdTagURI>
 </vmap:AdSource>
 </vmap:AdBreak>
 <vmap:AdBreak timeOffset="00:00:03.123" breakType="linear" breakId="midroll">
 <vmap:AdSource id="midroll-ads" allowMultipleAds="false" followRedirects="true">
 <vmap:AdTagURI templateType="vast3">
-https://www.arte.tv/static/artevpv7/vast/vast.xml
+/fixtures/vast.xml
 </vmap:AdTagURI>
 </vmap:AdSource>
 </vmap:AdBreak>
 <vmap:AdBreak timeOffset="00:00:06.000" breakType="linear" breakId="midroll">
 <vmap:AdSource id="midroll-ads" allowMultipleAds="false" followRedirects="true">
 <vmap:AdTagURI templateType="vast3">
-https://www.arte.tv/static/artevpv7/vast/vast.xml
+/fixtures/vast.xml
 </vmap:AdTagURI>
 </vmap:AdSource>
 </vmap:AdBreak>
 <vmap:AdBreak timeOffset="end" breakType="linear" breakId="postroll">
 <vmap:AdSource id="postroll" allowMultipleAds="false" followRedirects="true">
 <vmap:AdTagURI templateType="vast3">
-https://opencdn.b-cdn.net/pub/5.0/e-v-1/postroll.xml
+/fixtures/vast.xml
 </vmap:AdTagURI>
 </vmap:AdSource>
 </vmap:AdBreak>
