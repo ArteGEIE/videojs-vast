@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import Vast from '../index';
 /*
 * This method is responsible for rendering a nonlinear ad
@@ -11,8 +12,8 @@ export function playCompanionAd(creative) {
       variation.staticResources.map((staticResource) => {
         const ressourceContainer = document.createElement('div');
         this.domElements.push(ressourceContainer);
-        ressourceContainer.width = variation.staticResources.width;
-        ressourceContainer.height = variation.staticResources.height;
+        ressourceContainer.width = variation.staticResources.width > 0 ? variation.staticResources.width : 100;
+        ressourceContainer.height = variation.staticResources.height > 0 ? variation.staticResources.height : 100;
         ressourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
         ressourceContainer.style.maxHeight = variation.staticResources.expandedHeight;
         Vast.applyNonLinearCommonDomStyle(ressourceContainer);
@@ -20,7 +21,6 @@ export function playCompanionAd(creative) {
         const ressource = document.createElement('img');
         this.domElements.push(ressourceContainer);
         ressource.addEventListener('click', () => {
-          console.info('ressource clicked');
           window.open(variation.companionClickThroughURLTemplate, '_blank');
           this.companionVastTracker.click(null, this.macros);
         });

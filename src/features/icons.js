@@ -13,16 +13,16 @@ export function addIcons(ad) {
       if (staticResource) {
         iconContainer = document.createElement('img');
         iconContainer.src = staticResource;
-        iconContainer.height = height;
-        iconContainer.width = width;
+        iconContainer.height = height > 0 ? height : 100;
+        iconContainer.width = width > 0 ? width : 100;
       } else if (htmlResource) {
         iconContainer = document.createElement('div');
         iconContainer.innerHTML = icon.htmlResource;
       } else if (iframeResource) {
         iconContainer = document.createElement('iframe');
         iconContainer.src = iframeResource;
-        iconContainer.height = height;
-        iconContainer.width = width;
+        iconContainer.height = height > 0 ? height : 100;
+        iconContainer.width = width > 0 ? width : 100;
       }
 
       iconContainer.style.zIndex = '1';
