@@ -46,7 +46,7 @@ describe('Linear Test : Wrapper', () => {
 
 describe('Linear : skip', () => {
   it('Skip button should be present', () => {
-    const vastUrl = 'https://www.arte.tv/static/artevpv7/vast/vast_skip.xml';
+    const vastUrl = 'http://localhost:3000/fixtures/vast_skip.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then(() => {
