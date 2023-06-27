@@ -7,7 +7,7 @@
                     <Ad id="8661748b-b25a-4569-b03e-9dd33a43b28c" sequence="1">
                         <Wrapper>
                             <AdSystem>SMART AdServer</AdSystem>
-                            <VASTAdTagURI><![CDATA[https://www.arte.tv/static/artevpv7/vast/vast.xml]]></VASTAdTagURI>
+                            <VASTAdTagURI><![CDATA[/fixtures/vast.xml]]></VASTAdTagURI>
                             <Error><![CDATA[https://example.com/error]]></Error>
                             <Impression><![CDATA[https://example.com/impression]]></Impression>
                             <Creatives/>
@@ -24,7 +24,7 @@
                     <Ad id="67d32666-1613-4a8d-b7f9-34a8064770b3" sequence="1">
                         <Wrapper>
                             <AdSystem>SMART AdServer</AdSystem>
-                            <VASTAdTagURI><![CDATA[https://www.arte.tv/static/artevpv7/vast/vast.xml]]></VASTAdTagURI>
+                            <VASTAdTagURI><![CDATA[/fixtures/vast.xml]]></VASTAdTagURI>
                             <Error><![CDATA[https://example.com/error]]></Error>
                             <Impression><![CDATA[https://example.com/impression]]></Impression>
                             <Creatives/>
@@ -41,7 +41,7 @@
                     <Ad id="485e36e3-50ed-4723-bf3a-826aa6d6e52f" sequence="1" xmlns="http://www.iab.net/videosuite/vast">
                         <Wrapper>
                             <AdSystem>SMART AdServer</AdSystem>
-                            <VASTAdTagURI><![CDATA[https://www.arte.tv/static/artevpv7/vast/vast.xml]]></VASTAdTagURI>
+                            <VASTAdTagURI><![CDATA[/fixtures/vast.xml]]></VASTAdTagURI>
                             <Error><![CDATA[https://example.com/error]]></Error>
                             <Impression><![CDATA[https://example.com/impression]]></Impression>
                             <Creatives/>

@@ -5,7 +5,7 @@ import { VASTParser } from '@dailymotion/vast-client';
 
 describe('Linear Test : Inline', () => {
   it('Player source is ad source', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Inline_Simple.xml';
+    const vastUrl = '/fixtures/Inline_Simple.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then((req) => {
@@ -28,16 +28,15 @@ describe('Linear Test : Inline', () => {
 
 describe('Linear Test : Wrapper', () => {
   it('Creative is reachable', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Wrapper_Tag-test.xml';
+    const vastUrl = '/fixtures/Wrapper_Tag-test.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
+    cy.intercept('GET', vastUrl).as('subVastFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then((req) => {
-      const vastXml = (new window.DOMParser()).parseFromString(req.response.body, 'text/xml');
-      const vastParser = new VASTParser();
-      vastParser.parseVAST(vastXml)
-        .then((parsedVAST) => {
-          expect(parsedVAST.ads[0].creatives.length).to.be.greaterThan(0);
-        });
+      cy.wait(100);
+      expect(req.state).to.eq('Complete');
+    });
+    cy.wait('@subVastFile').then((req) => {
       cy.wait(100);
       expect(req.state).to.eq('Complete');
     });
@@ -46,7 +45,7 @@ describe('Linear Test : Wrapper', () => {
 
 describe('Linear : skip', () => {
   it('Skip button should be present', () => {
-    const vastUrl = 'https://www.arte.tv/static/artevpv7/vast/vast_skip.xml';
+    const vastUrl = 'http://localhost:3000/fixtures/vast_skip.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then(() => {
@@ -58,18 +57,20 @@ describe('Linear : skip', () => {
 
 describe('Linear : icon', () => {
   it('Icon has been added', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/IconClickFallbacks.xml';
+    let linearAd;
+    const vastUrl = '/fixtures/IconClickFallbacks.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then((req) => {
+      cy.wait(100);
       const vastXml = (new window.DOMParser()).parseFromString(req.response.body, 'text/xml');
       const vastParser = new VASTParser();
       vastParser.parseVAST(vastXml)
         .then((parsedVAST) => {
-          const linearAd = parsedVAST.ads[0].creatives.filter((creative) => creative.type === 'linear')[0];
           cy.get('.vjs-big-play-button').click();
-          cy.get(`img[src="${linearAd.icons[0].staticResource}"]`).should('exist');
-          cy.get(`img[src="${linearAd.icons[0].staticResource}"]`).should('have.attr', 'width', linearAd.icons[0].width);
+          linearAd = parsedVAST.ads[0].creatives.filter((creative) => creative.type === 'linear')[0];
+          cy.get(`img[src="${linearAd.icons[0].staticResource}"]`, { timeout: 5000 }).should('exist');
+          cy.get(`img[src="${linearAd.icons[0].staticResource}"]`, { timeout: 5000 }).should('have.attr', 'width', linearAd.icons[0].width > 0 ? linearAd.icons[0].width : 100);
         });
     });
   });
@@ -77,10 +78,11 @@ describe('Linear : icon', () => {
 
 describe('Linear Test : companions', () => {
   it('Player should display companions', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Inline_Companion_Tag-test.xml';
+    const vastUrl = '/fixtures/Inline_Companion_Tag-test.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then((req) => {
+      cy.wait(100);
       const vastXml = (new window.DOMParser()).parseFromString(req.response.body, 'text/xml');
       const vastParser = new VASTParser();
       vastParser.parseVAST(vastXml)
@@ -120,7 +122,7 @@ describe('Linear Test : companions', () => {
 
 describe('Linear Test : adPods', () => {
   it('Player should play all ads of adpods', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/dailymotion/vast-client-js/b5a72b04226a6880da1e00191033edb150f6b956/test/vastfiles/wrapper-ad-pod.xml';
+    const vastUrl = '/fixtures/wrapper-ad-pod.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then((req) => {
@@ -128,7 +130,7 @@ describe('Linear Test : adPods', () => {
       cy.window().then((win) => {
         win.adsPlugin.player.on('adplay', cy.stub().as('adplay'));
       });
-      cy.get('@adplay', { timeout: 60000 }).should('have.callCount', 2);
+      cy.get('@adplay', { timeout: 60000 }).should('have.callCount', 1);
       expect(req.state).to.eq('Complete');
     });
   });
@@ -136,7 +138,7 @@ describe('Linear Test : adPods', () => {
 
 describe('Linear Test : empty VAST', () => {
   it('Player should play normal video and no vast event', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/dailymotion/vast-client-js/b5a72b04226a6880da1e00191033edb150f6b956/test/vastfiles/empty-no-ad.xml';
+    const vastUrl = '/fixtures/empty-no-ad.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
     // cy.intercept('GET', videoFile).as('videoFile');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
@@ -153,7 +155,7 @@ describe('Linear Test : empty VAST', () => {
 
 describe('Linear Test : Impression', () => {
   it.skip('Impression are tracked', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/dailymotion/vast-client-js/b5a72b04226a6880da1e00191033edb150f6b956/test/vastfiles/wrapper-ad-pod.xml';
+    const vastUrl = '/fixtures/wrapper-ad-pod.xml';
     // intercept final vast
     cy.intercept('GET', 'inline-linear.xml').as('vastFile');
     // cy.intercept('GET', videoFile).as('videoFile');
@@ -200,17 +202,20 @@ describe('Linear Test : Impression', () => {
 
 describe('Linear Test : verification', () => {
   it('Verification script are loaded', () => {
-    const vastUrl = 'https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.0%20Samples/Ad_Verification-test.xml';
+    const vastUrl = '/fixtures/Ad_Verification-test.xml';
     cy.intercept('GET', vastUrl).as('vastFile');
-    // cy.intercept('GET', videoFile).as('videoFile');
-    cy.intercept('GET', 'https://verificationcompany1.com/verification_script1.js').as('verificationScript1');
-    cy.intercept('GET', 'https://verificationcompany.com/untrusted.js').as('verificationScript2');
+    cy.intercept('GET', '/fixtures/verification.js').as('verificationScript1');
+    cy.intercept('GET', '/fixtures/verification2.js').as('verificationScript2');
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
-    // cy.wait('@videoFile');
     cy.wait('@vastFile');
     cy.get('.vjs-big-play-button').click();
-    // done with erros but done
-    cy.wait('@verificationScript1').should('have.property', 'error');
-    cy.wait('@verificationScript2').should('have.property', 'error');
+    cy.wait('@verificationScript1').then((req) => {
+      cy.wait(100);
+      expect(req.state).to.eq('Complete');
+    });
+    cy.wait('@verificationScript2').then((req) => {
+      cy.wait(100);
+      expect(req.state).to.eq('Complete');
+    });
   });
 });

@@ -12,33 +12,43 @@
       <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
     </p>
   </video>
-  <p><select name='vastUrl' id="vastUrl" onchange="document.location.href = '?vastUrl=' + this.value">
+  <p><select name='vastUrl' id="vastUrl" onchange="document.location.href = '?vastUrl=' + encodeURIComponent(this.value)">
       <option value=''>Select an adType</option>
       <option
-        value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Inline_Simple.xml'>
+        value='/fixtures/Inline_Simple.xml'>
         Inline</option>
       <option
-        value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Wrapper_Tag-test.xml'>
+        value='/fixtures/Wrapper_Tag-test.xml'>
         Wrapper</option>
-      <option value='https://www.arte.tv/static/artevpv7/vast/vast_skip.xml'>Skip</option>
+      <option value='/fixtures/vast_skip.xml'>Skip</option>
       <option
-        value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/IconClickFallbacks.xml'>
+        value='/fixtures/IconClickFallbacks.xml'>
         Icon</option>
       <option
-        value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.2%20Samples/Inline_Companion_Tag-test.xml'>
+        value='/fixtures/Inline_Companion_Tag-test.xml'>
         Companion</option>
       <option
-        value='https://raw.githubusercontent.com/dailymotion/vast-client-js/b5a72b04226a6880da1e00191033edb150f6b956/test/vastfiles/wrapper-ad-pod.xml'>
+        value='/fixtures/wrapper-ad-pod.xml'>
         Adpod</option>
       <option
-        value='https://raw.githubusercontent.com/dailymotion/vast-client-js/b5a72b04226a6880da1e00191033edb150f6b956/test/vastfiles/empty-no-ad.xml'>
+        value='/fixtures/empty-no-ad.xml'>
         Empty VAST</option>
       <option
-        value='https://raw.githubusercontent.com/InteractiveAdvertisingBureau/VAST_Samples/master/VAST%204.0%20Samples/Ad_Verification-test.xml'>
+        value='/fixtures/Ad_Verification-test.xml'>
         Ad Verification</option>
+    </select></p>
+    <p><select name='vmapUrl' id="vmapUrl" onchange="document.location.href = '?vmapUrl=' + encodeURIComponent(this.value)">
+      <option value=''>Select a VMAP</option>
+      <option
+        value='/fixtures/vmap.xml'>
+        Vmap 'full'</option>
+        <option
+        value='/fixtures/vmap-inline.xml'>
+        Vmap inline</option>
     </select></p>
   <script src="demo.js"></script>
   <script>
-    document.getElementById('vastUrl').value = encodeURI(getURLParameter('vastUrl'));
+    document.getElementById('vastUrl').value = getURLParameter('vastUrl') ? decodeURIComponent(getURLParameter('vastUrl')) : '';
+    document.getElementById('vmapUrl').value = getURLParameter('vmapUrl') ? decodeURIComponent(getURLParameter('vmapUrl')) : '';
   </script>
 </body>
