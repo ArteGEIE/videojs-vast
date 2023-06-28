@@ -242,7 +242,13 @@ class Vast extends Plugin {
     const nextAd = this.adsArray.shift();
     return {
       ad: nextAd,
-      hasLinearCreative: () => nextAd.creatives.find((creative) => creative.type === 'linear') !== undefined,
+      hasLinearCreative: () => {
+        // find linear content
+        const linear = nextAd.creatives.find((creative) => creative.type === 'linear') !== undefined && nextAd.creatives.filter((creative) => creative.type === 'linear')[0];
+        // check if at least one mediaFile is provided
+        const hasMediaFile = linear.mediaFiles.length > 0 && linear.mediaFiles.some((mediaFile) => mediaFile.fileURL !== '');
+        return linear && hasMediaFile;
+      },
       linearCreative: () => nextAd.creatives.filter((creative) => creative.type === 'linear')[0],
       hasCompanionCreative: () => nextAd.creatives.find((creative) => creative.type === 'companion') !== undefined,
       companionCreative: () => nextAd.creatives.filter((creative) => creative.type === 'companion')[0],
