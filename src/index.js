@@ -336,6 +336,12 @@ export default class Vast extends Plugin {
   playLinearAd(adToRun) {
     // Retrieve the media file from the VAST manifest
     const mediaFile = Vast.getBestMediaFile(adToRun.linear.mediaFiles);
+    // case no media file available
+    if(mediaFile.fileURL === '') {
+      this.player.ads.skipLinearAdMode();
+      return false;
+    }
+    
 
     // Start ad mode
     this.player.ads.startLinearAdMode();
