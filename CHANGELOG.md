@@ -23,6 +23,10 @@
 ## [1.1.1](#1.1.1) (2023-07-03)
 
 
+### Bug Fixes
+
+* fix([VAST-44](https://artetv.atlassian.net/browse/VAST-44)): skip linear mode if no mediafile (#36) ([6bdea00fbf7caf5ed5a7bd539a4b66063684a4b9](https://github.com/ArteGEIE/videojs-vast/commit/6bdea00fbf7caf5ed5a7bd539a4b66063684a4b9))
+
 
 <a name="1.1.0"></a>
 # [1.1.0](#1.1.0) (2023-06-27)
