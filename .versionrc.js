@@ -18,7 +18,6 @@ if (githubUsername === undefined || githubToken === undefined) {
     process.exit(1);
 }
 
-const releaseType = argv['release-as'];
 let nextVersion = argv['release-as'];
 
 const finalVersion = semver.valid(semver.coerce(nextVersion));
