@@ -22,12 +22,12 @@ const format = argv.t === 'commonjs' ? 'cjs' : 'es6';
 const configByFormat = format === 'cjs' ? {
   format: 'cjs',
   outdir: buildConfig.cjs.outdir,
-
 } : {
   outdir: buildConfig.mjs.outdir,
   outExtension: { '.js': buildConfig.mjs.extension },
   format: 'esm',
   splitting: true,
+  target: ['es2020','safari13'],
 };
 
 const externalDeps = [
