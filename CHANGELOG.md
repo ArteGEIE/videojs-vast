@@ -1,3 +1,14 @@
+<a name="1.1.2"></a>
+## [1.1.2](#1.1.2) (2023-07-04)
+
+
+### Bug Fixes
+
+* fix([VAST-47](https://artetv.atlassian.net/browse/VAST-47)): add target to es6 esbuild (#39) ([2888945ea3dc1b4455b1da95d9d91624d6e26a76](https://github.com/ArteGEIE/videojs-vast/commit/2888945ea3dc1b4455b1da95d9d91624d6e26a76))
+
+
+
+
 <a name="1.1.1"></a>
 ## [1.1.1](#1.1.1) (2023-07-03)
 
