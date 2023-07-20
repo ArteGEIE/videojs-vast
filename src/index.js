@@ -46,7 +46,11 @@ class Vast extends Plugin {
 
     // initialize videojs-contrib-ads
     if (!this.player.ads) return;
-    this.player.ads(videojsContribAdsOptions);
+    try {
+      this.player.ads(videojsContribAdsOptions);
+    } catch (e) {
+      console.error(e);
+    }
 
     if (options.vmapUrl) {
       this.handleVMAP(options.vmapUrl);
