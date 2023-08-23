@@ -420,7 +420,7 @@ class Vast extends Plugin {
       this.domElements.push(skipButtonDiv);
       this.player.el().appendChild(skipButtonDiv);
       // update time
-      const interval = setInterval(() => {
+      this.skipInterval = setInterval(() => {
         skipRemainingTime = Math.round(skipDelay - this.player.currentTime());
         isSkippable = skipRemainingTime < 1;
         if (isSkippable) {
@@ -429,12 +429,16 @@ class Vast extends Plugin {
           skipButtonDiv.addEventListener('click', () => {
             this.player.trigger('skip');
           });
-          clearInterval(interval);
+          this.clearSkipInterval();
         }
         skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
       }, 1000);
     }
   }
+
+  clearSkipInterval = () => {
+    clearInterval(this.skipInterval);
+  };
 
   onAdError = (evt) => {
     this.debug('aderror');
@@ -503,6 +507,10 @@ class Vast extends Plugin {
     }
   };
 
+  onDispose = () => {
+    this.clearSkipInterval();
+  };
+
   onAdEnded = () => {
     this.debug('adended');
 
@@ -524,6 +532,9 @@ class Vast extends Plugin {
   };
 
   resetPlayer() {
+    // clear skip button interval
+    this.clearSkipInterval();
+
     // Finish ad mode so that regular content can resume
     this.player.ads.endLinearAdMode();
 
@@ -550,6 +561,7 @@ class Vast extends Plugin {
     this.player.on('skip', this.onSkip);
     this.player.on('adended', this.onAdEnded);
     this.player.on('ended', this.onEnded);
+    this.player.on('dispose', this.onDispose);
     window.addEventListener('beforeunload', this.onUnload);
   }
 
@@ -571,6 +583,7 @@ class Vast extends Plugin {
     this.player.off('skip', this.onSkip);
     this.player.off('adended', this.onAdEnded);
     this.player.off('ended', this.onEnded);
+    this.player.off('dispose', this.onDispose);
     window.removeEventListener('beforeunload', this.onUnload);
   }
 
