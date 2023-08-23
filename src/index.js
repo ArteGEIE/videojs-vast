@@ -508,7 +508,6 @@ class Vast extends Plugin {
   };
 
   onDispose = () => {
-    console.log('ondispose');
     this.clearSkipInterval();
   };
 
@@ -533,7 +532,7 @@ class Vast extends Plugin {
   };
 
   resetPlayer() {
-    // clear
+    // clear skip button interval
     this.clearSkipInterval();
 
     // Finish ad mode so that regular content can resume
