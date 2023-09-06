@@ -391,7 +391,9 @@ class Vast extends Plugin {
     );
 
     // make timeline not clickable
-    this.player.controlBar.progressControl.disable();
+    if (this.player.controlBar) {
+      this.player.controlBar.progressControl.disable();
+    }
 
     if (this.options.addCtaClickZone) {
       // add the cta click
@@ -542,7 +544,9 @@ class Vast extends Plugin {
     this.player.trigger('vast.complete');
 
     // reactivate controlbar
-    this.player.controlBar.progressControl.enable();
+    if (this.player.controlBar) {
+      this.player.controlBar.progressControl.enable();
+    }
   }
 
   addEventsListeners() {
