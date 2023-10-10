@@ -1,12 +1,15 @@
 <a name="1.1.4"></a>
 ## [1.1.4](#1.1.4) (2023-08-23)
 
-
+### Bug Fixes
+* fix(VAST-54): Clear skip button interval on player destroy by @kasty (#45)
 
 <a name="1.1.3"></a>
 ## [1.1.3](#1.1.3) (2023-07-20)
 
-
+### Bug Fixes
+* fix(VAST-49): change target from saf13 to saf11 by @privaloops (#42)
+* fix(VAST-51): add try catch by @kasty (#43)
 
 <a name="1.1.2"></a>
 ## [1.1.2](#1.1.2) (2023-07-04)
