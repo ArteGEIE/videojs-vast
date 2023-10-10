@@ -34,7 +34,6 @@
     "build": "npm run build:cjs && npm run build:esm",
     "changelog": "conventional-changelog --preset angular --config changelog.config.js",
     "ci:changelog": "npm run changelog -- --same-file --infile CHANGELOG.md && npm run transform:changelog",
-    "github_release": "babel-node github-release.mjs",
     "lint": "eslint ./src",
     "release": "standard-version",
     "serve": "serve -l 3000 docs",
@@ -50,7 +49,6 @@
     "videojs-contrib-ads": "^7.2.0"
   },
   "devDependencies": {
-    "@babel/node": "^7.20.7",
     "@babel/preset-env": "^7.21.5",
     "concurrently": "^8.0.1",
     "conventional-changelog-cli": "^2.2.2",
