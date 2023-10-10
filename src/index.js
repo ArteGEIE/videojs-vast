@@ -417,7 +417,7 @@ class Vast extends Plugin {
       // add the skip button
       const skipButtonDiv = document.createElement('div');
       skipButtonDiv.id = 'videojs-vast-skipButton';
-      skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none;';
+      skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block';
       skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
       this.domElements.push(skipButtonDiv);
       this.player.el().appendChild(skipButtonDiv);
