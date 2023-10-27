@@ -1,3 +1,14 @@
+<a name="1.2.1"></a>
+## [1.2.1](#1.2.1) (2023-10-27)
+
+
+### Bug Fixes
+
+* fix([VAST-46](https://artetv.atlassian.net/browse/VAST-46)): remove forgotten command (#50) ([fe6f695f439fd66d620a67d52718e838ed873314](https://github.com/ArteGEIE/videojs-vast/commit/fe6f695f439fd66d620a67d52718e838ed873314))
+
+
+
+
 <a name="1.2.0"></a>
 # [1.2.0](#1.2.0) (2023-10-27)
 
