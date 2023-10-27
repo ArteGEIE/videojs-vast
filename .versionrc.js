@@ -97,7 +97,6 @@ const config = () => ({
     posttag: oneLiner(' && ')([
       // push tag
       `git push origin ${nextVersion}`,
-      'npm run github_release',
       // merge back in develop at the very end of the process
       'git checkout develop',
       'git merge master',
