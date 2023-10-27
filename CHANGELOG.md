@@ -1,15 +1,28 @@
+<a name="1.2.0"></a>
+# [1.2.0](#1.2.0) (2023-10-27)
+
+
+### Features
+
+* feat([VAST-46](https://artetv.atlassian.net/browse/VAST-46)): use github actions to generate releases (#38) ([32c44922644a5f79d18f7abfaec439c485728070](https://github.com/ArteGEIE/videojs-vast/commit/32c44922644a5f79d18f7abfaec439c485728070))
+
+* feat([VAST-56](https://artetv.atlassian.net/browse/VAST-56)): set display block explicitly (#47) ([332714b578cfc717e36a42a1720f8d122f97ed54](https://github.com/ArteGEIE/videojs-vast/commit/332714b578cfc717e36a42a1720f8d122f97ed54))
+
+
+
+
 <a name="1.1.4"></a>
 ## [1.1.4](#1.1.4) (2023-08-23)
 
 ### Bug Fixes
-* fix(VAST-54): Clear skip button interval on player destroy by @kasty (#45)
+* fix([VAST-54](https://artetv.atlassian.net/browse/VAST-54)): Clear skip button interval on player destroy by @kasty (#45)
 
 <a name="1.1.3"></a>
 ## [1.1.3](#1.1.3) (2023-07-20)
 
 ### Bug Fixes
-* fix(VAST-49): change target from saf13 to saf11 by @privaloops (#42)
-* fix(VAST-51): add try catch by @kasty (#43)
+* fix([VAST-49](https://artetv.atlassian.net/browse/VAST-49)): change target from saf13 to saf11 by @privaloops (#42)
+* fix([VAST-51](https://artetv.atlassian.net/browse/VAST-51)): add try catch by @kasty (#43)
 
 <a name="1.1.2"></a>
 ## [1.1.2](#1.1.2) (2023-07-04)
