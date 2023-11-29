@@ -19,6 +19,8 @@
 
 * feat([VAST-56](https://artetv.atlassian.net/browse/VAST-56)): set display block explicitly (#47) ([332714b578cfc717e36a42a1720f8d122f97ed54](https://github.com/ArteGEIE/videojs-vast/commit/332714b578cfc717e36a42a1720f8d122f97ed54))
 
+* feat([VAST-57](https://artetv.atlassian.net/browse/VAST-57)): Test progressBar existence before enable/disable (#48) ([7509835d653a8b5c834bcec485de61f689de47dd](https://github.com/ArteGEIE/videojs-vast/commit/7509835d653a8b5c834bcec485de61f689de47dd))
+
 
 
 
