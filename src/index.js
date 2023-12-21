@@ -145,16 +145,22 @@ class Vast extends Plugin {
 
   readAd() {
     const currentAd = this.getNextAd();
-
+    const linearCreative = currentAd.linearCreative();
     // Retrieve the CTA URl to render
-    this.ctaUrl = Vast.getBestCtaUrl(currentAd.linearCreative());
+    this.ctaUrl = Vast.getBestCtaUrl(linearCreative);
     this.debug('ctaUrl', this.ctaUrl);
 
     if (currentAd.hasLinearCreative()) {
+      this.player.trigger('vast.metadata', {
+        duration: linearCreative.duration,
+        id: linearCreative.id,
+        adId: linearCreative.adId,
+        type: linearCreative.type,
+      });
       this.linearVastTracker = new VASTTracker(
         this.vastClient,
         currentAd.ad,
-        currentAd.linearCreative(),
+        linearCreative,
       );
       this.linearVastTracker.on('firstQuartile', () => {
         this.debug('firstQuartile');
@@ -163,7 +169,7 @@ class Vast extends Plugin {
         this.debug('midpoint');
       });
       this.addIcons(currentAd);
-      this.addSkipButton(currentAd.linearCreative());
+      this.addSkipButton(linearCreative);
       // We now check if verification is needed or not, if it is, then we import the
       // verification script with a timeout trigger. If it is not, then we simply display the ad
       // by calling playAd
@@ -172,7 +178,7 @@ class Vast extends Plugin {
         // a best effort to load the verification script before the actual ad, but it should not
         // block the ad nor the video playback
         const verificationTimeout = setTimeout(() => {
-          this.playLinearAd(currentAd.linearCreative());
+          this.playLinearAd(linearCreative);
         }, this.options.verificationTimeout);
 
         // Now for each verification script, we need to inject a script tag in the DOM and wait
@@ -193,7 +199,7 @@ class Vast extends Plugin {
           } else {
             // Once we are done with all verification tags, clear the timeout timer and play the ad
             clearTimeout(verificationTimeout);
-            this.playLinearAd(currentAd.linearCreative());
+            this.playLinearAd(linearCreative);
           }
         };
         const scriptTagErrorCallback = () => {
@@ -212,7 +218,7 @@ class Vast extends Plugin {
         );
       } else {
         // No verification to import, just run the add
-        this.playLinearAd(currentAd.linearCreative());
+        this.playLinearAd(linearCreative);
       }
     } else {
       this.player.ads.skipLinearAdMode();
@@ -263,6 +269,7 @@ class Vast extends Plugin {
 
   onAdPlay = () => {
     this.debug('adplay');
+    console.log('adplay', this.player.duration());
     // don't track the very first play to avoid sending resume tracker event
     if (parseInt(this.player.currentTime(), 10) > 0) {
       this.linearVastTracker.setPaused(false, {
@@ -374,6 +381,7 @@ class Vast extends Plugin {
       ctaUrl: this.ctaUrl,
       skipDelay: this.linearVastTracker.skipDelay,
       adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
+      duration: this.player.duration(),
     });
     // Track the impression of an ad
     this.linearVastTracker.load({
