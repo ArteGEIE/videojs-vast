@@ -269,7 +269,6 @@ class Vast extends Plugin {
 
   onAdPlay = () => {
     this.debug('adplay');
-    console.log('adplay', this.player.duration());
     // don't track the very first play to avoid sending resume tracker event
     if (parseInt(this.player.currentTime(), 10) > 0) {
       this.linearVastTracker.setPaused(false, {
