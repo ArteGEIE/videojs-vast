@@ -26,13 +26,25 @@ class Vast extends Plugin {
       verificationTimeout: 2000,
       addCtaClickZone: true,
       addSkipButton: true,
+      skipButtonOptions: {
+        text: 'skip >>',
+        cssText: 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block',
+        resetStyle: false,
+      },
       debug: false,
       timeout: 5000,
       isLimitedTracking: false,
     };
 
     // Assign options that were passed in by the consumer
-    this.options = Object.assign(defaultOptions, options);
+    this.options = {
+      ...defaultOptions,
+      ...options,
+      skipButtonOptions: {
+        ...defaultOptions.skipButtonOptions,
+        ...options.skipButtonOptions,
+      },
+    };
 
     this.setMacros();
 
@@ -424,13 +436,21 @@ class Vast extends Plugin {
     this.debug('addSkipButton');
     if (this.options.addSkipButton && creative.skipDelay > 0) {
       const { skipDelay } = creative;
+      const { skipButtonOptions: { cssText, text, resetStyle } } = this.options;
       let skipRemainingTime = Math.round(skipDelay - this.player.currentTime());
       let isSkippable = skipRemainingTime < 1;
       // add the skip button
       const skipButtonDiv = document.createElement('div');
       skipButtonDiv.id = 'videojs-vast-skipButton';
-      skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block';
-      skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
+      skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block;';
+      if (cssText && cssText !== '') {
+        if (resetStyle) {
+          skipButtonDiv.style.cssText = cssText;
+        } else {
+          skipButtonDiv.style.cssText += cssText;
+        }
+      }
+      skipButtonDiv.innerHTML = isSkippable ? text : skipRemainingTime.toFixed();
       this.domElements.push(skipButtonDiv);
       this.player.el().appendChild(skipButtonDiv);
       // update time
@@ -445,7 +465,9 @@ class Vast extends Plugin {
           });
           this.clearSkipInterval();
         }
-        skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
+        skipButtonDiv.innerHTML = isSkippable
+          ? text
+          : skipRemainingTime.toFixed();
       }, 1000);
     }
   }
