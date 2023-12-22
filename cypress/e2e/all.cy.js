@@ -65,7 +65,6 @@ describe('Linear : icon', () => {
     cy.visit(`http://localhost:3000/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').then((req) => {
       cy.wait(100);
-      console.log('req', req.response.body, VASTParser);
       const vastXml = (new window.DOMParser()).parseFromString(req.response.body, 'text/xml');
       const vastParser = new VASTParser();
       vastParser.parseVAST(vastXml)
