@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/ArteGEIE/videojs-vast/compare/1.2.1...1.3.0) (2024-01-03)
+
+
+### Features
+
+* **VAST-59:** Add a watcher to build automatically during dev ([#53](https://github.com/ArteGEIE/videojs-vast/issues/53)) ([979b85d](https://github.com/ArteGEIE/videojs-vast/commit/979b85daa727207a7508cb54eab41db937301e3f))
+* **VAST-60:** simpler changelog ([#54](https://github.com/ArteGEIE/videojs-vast/issues/54)) ([6432797](https://github.com/ArteGEIE/videojs-vast/commit/643279736402c7c994cba3d843ed0f588c93be63))
+* **VAST-63:** send a metadata event ([#56](https://github.com/ArteGEIE/videojs-vast/issues/56)) ([3826695](https://github.com/ArteGEIE/videojs-vast/commit/38266958b0d10672d3cdf83066eaca956ece03d0))
+* **VAST-64:** e2e tests randomly fails ([#57](https://github.com/ArteGEIE/videojs-vast/issues/57)) ([7478b4b](https://github.com/ArteGEIE/videojs-vast/commit/7478b4b46819ab4d5fd2b1cdc929689aa0906eb5))
+
+
+
 ## [1.2.1](https://github.com/ArteGEIE/videojs-vast/compare/1.2.0...1.2.1) (2023-10-27)
 
 
