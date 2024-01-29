@@ -51,7 +51,11 @@ class Vast extends Plugin {
 
     // initialize videojs-contrib-ads
     if (!this.player.ads) return;
-    this.player.ads(videojsContribAdsOptions);
+    try {
+      this.player.ads(videojsContribAdsOptions);
+    } catch (e) {
+      console.error(e);
+    }
 
     if (options.vmapUrl) {
       this.handleVMAP(options.vmapUrl);
@@ -146,16 +150,22 @@ class Vast extends Plugin {
 
   readAd() {
     const currentAd = this.getNextAd();
-
+    const linearCreative = currentAd.linearCreative();
     // Retrieve the CTA URl to render
     this.ctaUrl = getBestCtaUrl(currentAd.linearCreative());
     this.debug('ctaUrl', this.ctaUrl);
 
     if (currentAd.hasLinearCreative()) {
+      this.player.trigger('vast.metadata', {
+        duration: linearCreative.duration,
+        id: linearCreative.id,
+        adId: linearCreative.adId,
+        type: linearCreative.type,
+      });
       this.linearVastTracker = new VASTTracker(
         this.vastClient,
         currentAd.ad,
-        currentAd.linearCreative(),
+        linearCreative,
       );
       this.linearVastTracker.on('firstQuartile', () => {
         this.debug('firstQuartile');
@@ -164,7 +174,7 @@ class Vast extends Plugin {
         this.debug('midpoint');
       });
       this.addIcons(currentAd);
-      this.addSkipButton(currentAd.linearCreative());
+      this.addSkipButton(linearCreative);
       // We now check if verification is needed or not, if it is, then we import the
       // verification script with a timeout trigger. If it is not, then we simply display the ad
       // by calling playAd
@@ -173,7 +183,7 @@ class Vast extends Plugin {
         // a best effort to load the verification script before the actual ad, but it should not
         // block the ad nor the video playback
         const verificationTimeout = setTimeout(() => {
-          this.playLinearAd(currentAd.linearCreative());
+          this.playLinearAd(linearCreative);
         }, this.options.verificationTimeout);
 
         // Now for each verification script, we need to inject a script tag in the DOM and wait
@@ -194,7 +204,7 @@ class Vast extends Plugin {
           } else {
             // Once we are done with all verification tags, clear the timeout timer and play the ad
             clearTimeout(verificationTimeout);
-            this.playLinearAd(currentAd.linearCreative());
+            this.playLinearAd(linearCreative);
           }
         };
         const scriptTagErrorCallback = () => {
@@ -213,7 +223,7 @@ class Vast extends Plugin {
         );
       } else {
         // No verification to import, just run the add
-        this.playLinearAd(currentAd.linearCreative());
+        this.playLinearAd(linearCreative);
       }
     } else {
       this.player.ads.skipLinearAdMode();
@@ -375,6 +385,7 @@ class Vast extends Plugin {
       ctaUrl: this.ctaUrl,
       skipDelay: this.linearVastTracker.skipDelay,
       adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
+      duration: this.player.duration(),
     });
     // Track the impression of an ad
     this.linearVastTracker.load({
@@ -392,7 +403,9 @@ class Vast extends Plugin {
     );
 
     // make timeline not clickable
-    this.player.controlBar.progressControl.disable();
+    if (this.player.controlBar) {
+      this.player.controlBar.progressControl.disable();
+    }
 
     if (this.options.addCtaClickZone) {
       // add the cta click
@@ -416,12 +429,12 @@ class Vast extends Plugin {
       // add the skip button
       const skipButtonDiv = document.createElement('div');
       skipButtonDiv.id = 'videojs-vast-skipButton';
-      skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none;';
+      skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block';
       skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
       this.domElements.push(skipButtonDiv);
       this.player.el().appendChild(skipButtonDiv);
       // update time
-      const interval = setInterval(() => {
+      this.skipInterval = setInterval(() => {
         skipRemainingTime = Math.round(skipDelay - this.player.currentTime());
         isSkippable = skipRemainingTime < 1;
         if (isSkippable) {
@@ -430,12 +443,16 @@ class Vast extends Plugin {
           skipButtonDiv.addEventListener('click', () => {
             this.player.trigger('skip');
           });
-          clearInterval(interval);
+          this.clearSkipInterval();
         }
         skipButtonDiv.innerHTML = isSkippable ? 'skip >>' : skipRemainingTime.toFixed();
       }, 1000);
     }
   }
+
+  clearSkipInterval = () => {
+    clearInterval(this.skipInterval);
+  };
 
   onAdError = (evt) => {
     this.debug('aderror');
@@ -504,6 +521,10 @@ class Vast extends Plugin {
     }
   };
 
+  onDispose = () => {
+    this.clearSkipInterval();
+  };
+
   onAdEnded = () => {
     this.debug('adended');
 
@@ -525,6 +546,9 @@ class Vast extends Plugin {
   };
 
   resetPlayer() {
+    // clear skip button interval
+    this.clearSkipInterval();
+
     // Finish ad mode so that regular content can resume
     this.player.ads.endLinearAdMode();
 
@@ -532,7 +556,9 @@ class Vast extends Plugin {
     this.player.trigger('vast.complete');
 
     // reactivate controlbar
-    this.player.controlBar.progressControl.enable();
+    if (this.player.controlBar) {
+      this.player.controlBar.progressControl.enable();
+    }
   }
 
   addEventsListeners() {
@@ -551,6 +577,7 @@ class Vast extends Plugin {
     this.player.on('skip', this.onSkip);
     this.player.on('adended', this.onAdEnded);
     this.player.on('ended', this.onEnded);
+    this.player.on('dispose', this.onDispose);
     window.addEventListener('beforeunload', this.onUnload);
   }
 
@@ -572,6 +599,7 @@ class Vast extends Plugin {
     this.player.off('skip', this.onSkip);
     this.player.off('adended', this.onAdEnded);
     this.player.off('ended', this.onEnded);
+    this.player.off('dispose', this.onDispose);
     window.removeEventListener('beforeunload', this.onUnload);
   }
 

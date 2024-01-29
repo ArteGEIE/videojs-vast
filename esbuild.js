@@ -27,7 +27,7 @@ const configByFormat = format === 'cjs' ? {
   outExtension: { '.js': buildConfig.mjs.extension },
   format: 'esm',
   splitting: true,
-  target: ['es2020','safari13'],
+  target: ['es2020', 'safari11'],
 };
 
 const externalDeps = [
