@@ -1,11 +1,11 @@
-import Vast from '../index';
+import { getBestMediaFile } from '../lib/utils';
 /*
 * This method is responsible for rendering a linear ad
 */
 export function playLinearAd(creative) {
   this.debug('playLinearAd', creative);
   // Retrieve the media file from the VAST manifest
-  const mediaFile = Vast.getBestMediaFile(creative.mediaFiles);
+  const mediaFile = getBestMediaFile(creative.mediaFiles);
 
   // Start ad mode
   if (!this.player.ads.inAdBreak()) {

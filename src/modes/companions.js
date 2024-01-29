@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
-import Vast from '../index';
+import { applyNonLinearCommonDomStyle } from '../lib/utils';
+
 /*
 * This method is responsible for rendering a nonlinear ad
 */
@@ -16,7 +17,7 @@ export function playCompanionAd(creative) {
         ressourceContainer.height = variation.staticResources.height > 0 ? variation.staticResources.height : 100;
         ressourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
         ressourceContainer.style.maxHeight = variation.staticResources.expandedHeight;
-        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+        applyNonLinearCommonDomStyle(ressourceContainer);
 
         const ressource = document.createElement('img');
         this.domElements.push(ressourceContainer);
@@ -44,7 +45,7 @@ export function playCompanionAd(creative) {
         ressourceContainer.height = variation.htmlResources.height;
         ressourceContainer.style.maxWidth = variation.htmlResources.expandedWidth;
         ressourceContainer.style.maxHeight = variation.htmlResources.expandedHeight;
-        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+        applyNonLinearCommonDomStyle(ressourceContainer);
         ressourceContainer.addEventListener('click', () => {
           window.open(variation.companionClickThroughURLTemplate, '_blank');
           this.companionVastTracker.click(null, this.macros);
@@ -68,7 +69,7 @@ export function playCompanionAd(creative) {
         ressourceContainer.height = variation.iframeResources.height;
         ressourceContainer.style.maxWidth = variation.iframeResources.expandedWidth;
         ressourceContainer.style.maxHeight = variation.iframeResources.expandedHeight;
-        Vast.applyNonLinearCommonDomStyle(ressourceContainer);
+        applyNonLinearCommonDomStyle(ressourceContainer);
         ressourceContainer.addEventListener('click', () => {
           window.open(variation.companionClickThroughURLTemplate, '_blank');
           this.companionVastTracker.click(null, this.macros);
