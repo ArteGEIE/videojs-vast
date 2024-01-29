@@ -14,7 +14,6 @@ module.exports = {
     'no-console': 0,
     'no-unused-vars': 1,
     'import/no-extraneous-dependencies': ['error', { devDependencies: true, optionalDependencies: true, peerDependencies: true }],
-    'import/no-cycle': [2, { maxDepth: 1 }],
     'import/prefer-default-export': 0,
     'no-param-reassign': ['error', { props: false }],
   },
