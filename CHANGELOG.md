@@ -1,3 +1,13 @@
+# [1.4.0](https://github.com/ArteGEIE/videojs-vast/compare/1.3.0...1.4.0) (2024-02-07)
+
+
+### Features
+
+* **VAST-55:** Fix circular dependencies ([#59](https://github.com/ArteGEIE/videojs-vast/issues/59)) ([39d3e8f](https://github.com/ArteGEIE/videojs-vast/commit/39d3e8f30984ea843971acd5416dabd57f6afa17))
+* **VAST-62:** Make the skip button label configurable ([#58](https://github.com/ArteGEIE/videojs-vast/issues/58)) ([1cf6d8c](https://github.com/ArteGEIE/videojs-vast/commit/1cf6d8cd62fd96477f65abc1d4ed85c2a7d1b156))
+
+
+
 # [1.3.0](https://github.com/ArteGEIE/videojs-vast/compare/1.2.1...1.3.0) (2024-01-03)
 
 
