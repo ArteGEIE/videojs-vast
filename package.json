@@ -51,7 +51,7 @@
     "concurrently": "^8.0.1",
     "conventional-changelog-cli": "^2.2.2",
     "conventional-commits-parser": "^3.2.4",
-    "cypress": "^12.11.0",
+    "cypress": "^13.6.4",
     "esbuild": "^0.17.18",
     "eslint": "^8.40.0",
     "eslint-config-airbnb-base": "^15.0.0",
