@@ -12,5 +12,10 @@ globalThis.getURLParameter = getURLParameter;
 globalThis.adsPlugin = videojs('my-video', { autoplay: false, muted: true }).vast({
   vastUrl: getURLParameter('vastUrl'),
   vmapUrl: getURLParameter('vmapUrl'),
+  skipButtonOptions: {
+    text: 'Passer',
+    inlineStyle: 'font-size:16px; font-family: serif; color: orange',
+    resetStyle: false,
+  },
   debug: true,
 });
