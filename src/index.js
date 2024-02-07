@@ -1,11 +1,16 @@
 import videojs from 'video.js';
 import 'videojs-contrib-ads';
-import { VASTClient, VASTTracker } from '@dailymotion/vast-client';
+import { VASTClient, VASTTracker, VASTParser } from '@dailymotion/vast-client';
+import { addIcons } from './features/icons';
+import { playLinearAd } from './modes/linear';
+import { playCompanionAd } from './modes/companions';
+import { playNonLinearAd } from './modes/nonlinear';
 import {
-  injectScriptTag, getLocalISOString, convertTimeOffsetToSeconds,
+  injectScriptTag, getLocalISOString, convertTimeOffsetToSeconds, fetchVmapUrl,
 } from './lib';
-import { playLinearAd, playNonLinearAd, playCompanionAd } from './modes';
-import { addIcons, handleVMAP, parseInlineVastData } from './features';
+import {
+  getMidrolls, getPostroll, getPreroll, getBestCtaUrl,
+} from './lib/utils';
 
 const Plugin = videojs.getPlugin('plugin');
 
@@ -147,7 +152,7 @@ class Vast extends Plugin {
     const currentAd = this.getNextAd();
     const linearCreative = currentAd.linearCreative();
     // Retrieve the CTA URl to render
-    this.ctaUrl = Vast.getBestCtaUrl(linearCreative);
+    this.ctaUrl = getBestCtaUrl(currentAd.linearCreative());
     this.debug('ctaUrl', this.ctaUrl);
 
     if (currentAd.hasLinearCreative()) {
@@ -611,103 +616,6 @@ class Vast extends Plugin {
     });
   };
 
-  static getCloseButton(clickCallback) {
-    const closeButton = document.createElement('button');
-    closeButton.addEventListener('click', clickCallback);
-    closeButton.style.width = '20px';
-    closeButton.style.height = '20px';
-    closeButton.style.position = 'absolute';
-    closeButton.style.right = '5px';
-    closeButton.style.top = '5px';
-    closeButton.style.zIndex = '3';
-    closeButton.style.background = '#CCC';
-    closeButton.style.color = '#000';
-    closeButton.style.fontSize = '12px';
-    closeButton.style.cursor = 'pointer';
-    closeButton.textContent = 'X';
-    return closeButton;
-  }
-
-  static applyNonLinearCommonDomStyle(domElement) {
-    domElement.style.cursor = 'pointer';
-    domElement.style.left = '50%';
-    domElement.style.position = 'absolute';
-    domElement.style.transform = 'translateX(-50%)';
-    domElement.style.bottom = '80px';
-    domElement.style.display = 'block';
-    domElement.style.zIndex = '2';
-  }
-
-  /*
-  * This method is responsible for choosing the best media file to play according to the user's
-  * screen resolution and internet connection speed
-  */
-  static getBestMediaFile = (mediaFilesAvailable) => {
-    // select the best media file based on internet bandwidth and screen size/resolution
-    const videojsVhs = localStorage.getItem('videojs-vhs');
-    const bandwidth = videojsVhs ? JSON.parse(videojsVhs).bandwidth : undefined;
-
-    let bestMediaFile = mediaFilesAvailable[0];
-
-    if (mediaFilesAvailable && bandwidth) {
-      const { height } = window.screen;
-      const { width } = window.screen;
-
-      const result = mediaFilesAvailable
-        .sort((a, b) => ((Math.abs(a.bitrate - bandwidth) - Math.abs(b.bitrate - bandwidth))
-          || (Math.abs(a.width - width) - Math.abs(b.width - width))
-          || (Math.abs(a.height - height) - Math.abs(b.height - height))));
-
-      [bestMediaFile] = result;
-    }
-
-    return bestMediaFile;
-  };
-
-  /*
-  * This method is responsible for choosing the best URl to redirect the user to when he clicks
-  * on the ad
-  */
-  static getBestCtaUrl = (creative) => {
-    if (
-      creative.videoClickThroughURLTemplate
-      && creative.videoClickThroughURLTemplate.url) {
-      return creative.videoClickThroughURLTemplate.url;
-    }
-    return false;
-  };
-
-  static getMidrolls = (adBreaks) => {
-    const midrolls = [];
-    if (adBreaks) {
-      return adBreaks
-        .filter((adBreak) => !['start', '0%', '00:00:00', 'end', '100%'].includes(adBreak.timeOffset))
-        .reduce((prev, current) => ([
-          ...prev,
-          {
-            timeOffset: current.timeOffset,
-            vastUrl: current.adSource.adTagURI?.uri,
-            vastData: current.adSource.vastAdData,
-          },
-        ]), []);
-    }
-    return midrolls;
-  };
-
-  static getPreroll = (adBreaks) => {
-    if (adBreaks) {
-      return adBreaks.filter((adBreak) => ['start', '0%', '00:00:00'].includes(adBreak.timeOffset))[0];
-    }
-    return false;
-  };
-
-  static getPostroll = (adBreaks) => {
-    if (adBreaks) {
-      return adBreaks.filter((adBreak) => ['end', '100%'].includes(adBreak.timeOffset))[0];
-    }
-    return false;
-  };
-
   debug(msg, data = undefined) {
     if (!this.options.debug) {
       return;
@@ -723,14 +631,78 @@ class Vast extends Plugin {
     this.removeEventsListeners();
     super.dispose();
   }
-}
 
+  async handleVMAP(vmapUrl) {
+    try {
+      const vmap = await fetchVmapUrl(vmapUrl);
+      if (vmap.adBreaks && vmap.adBreaks.length > 0) {
+        this.addEventsListeners();
+        // handle preroll
+        const preroll = getPreroll(vmap.adBreaks);
+        if (!preroll) {
+          this.disablePreroll();
+        } else if (preroll.adSource?.adTagURI?.uri) {
+          // load vast preroll url
+          await this.handleVAST(preroll.adSource.adTagURI.uri);
+          // a preroll has been found, trigger adsready
+          this.player.trigger('adsready');
+        } else if (preroll.adSource.vastAdData) {
+          this.parseInlineVastData(preroll.adSource?.vastAdData, 'preroll');
+        }
+        // handle postroll
+        const postroll = getPostroll(vmap.adBreaks);
+        if (!postroll) {
+          this.disablePostroll();
+        } else if (postroll.adSource?.adTagURI?.uri) {
+          this.postRollUrl = postroll.adSource.adTagURI.uri;
+        } else if (postroll.adSource?.vastAdData) {
+          this.parseInlineVastData(postroll.adSource?.vastAdData, 'postroll');
+        }
+        this.watchForProgress = getMidrolls(vmap.adBreaks);
+        if (this.watchForProgress.length > 0) {
+          // listen on regular content for midroll handling
+          this.player.on('timeupdate', this.onProgress);
+        }
+      }
+    } catch (err) {
+      // could not fetch vmap
+      console.error(err);
+    }
+  }
+
+  parseInlineVastData(vastAdData, adType) {
+    const xmlString = (new XMLSerializer()).serializeToString(vastAdData);
+    const vastXml = (new window.DOMParser()).parseFromString(xmlString, 'text/xml');
+    const vastParser = new VASTParser();
+    vastParser.parseVAST(vastXml)
+      .then((parsedVAST) => {
+        if (adType === 'postroll') {
+          // store for later use (in readyforpostroll event)
+          this.postRollData = parsedVAST.ads ?? [];
+        } else if (adType === 'preroll') {
+          this.adsArray = parsedVAST.ads ?? [];
+          this.player.trigger('adsready');
+        } else if (adType === 'midroll') {
+          // store for later use (in readyforpostroll event)
+          this.adsArray = parsedVAST.ads ?? [];
+          this.readAd();
+        }
+      })
+      .catch((err) => {
+        console.log('error', err);
+        if (adType === 'postroll' || adType === 'midroll') {
+          this.disablePostroll();
+        } else if (adType === 'preroll') {
+          // skip preroll, go ahaed to regular content
+          this.player.ads.skipLinearAdMode();
+        }
+      });
+  }
+}
 Vast.prototype.playLinearAd = playLinearAd;
 Vast.prototype.playNonLinearAd = playNonLinearAd;
 Vast.prototype.playCompanionAd = playCompanionAd;
 Vast.prototype.addIcons = addIcons;
-Vast.prototype.handleVMAP = handleVMAP;
-Vast.prototype.parseInlineVastData = parseInlineVastData;
 
 export default Vast;
 
