@@ -90,7 +90,7 @@ This plugin currently supports a handful of options that might help you customiz
 * **debug** (boolean) - Display detailed logging in the browser console. ***Default: false***
 * **addCtaClickZone** (boolean) - Add or not a clickzone for the cta url. ***Default: true***
 * **addSkipButton** (boolean) - Add or not a skip button for skippable ads. ***Default: true***
-* **skipButtonOptions** (object) - Customize skip button text and style. ⚠️ ***cssText*** option extends the default value, unless ***resetStyle*** is set to `true`.
+* **skipButtonOptions** (object) - Customize skip button text and style. ⚠️ ***inlineStyle*** option extends the default value, unless ***resetStyle*** is set to `true`.
 ***Defaults:***
 ```
 {
