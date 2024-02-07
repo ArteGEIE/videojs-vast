@@ -14,7 +14,7 @@ globalThis.adsPlugin = videojs('my-video', { autoplay: false, muted: true }).vas
   vmapUrl: getURLParameter('vmapUrl'),
   skipButtonOptions: {
     text: 'Passer',
-    cssText: 'font-size:16px; font-family: serif;',
+    inlineStyle: 'font-size:16px; font-family: serif; color: orange',
     resetStyle: false,
   },
   debug: true,

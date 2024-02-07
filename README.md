@@ -95,7 +95,7 @@ This plugin currently supports a handful of options that might help you customiz
 ```
 {
   text: "skip >>",
-  cssText: "bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block;",
+  inlineStyle: "bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block;",
   resetStyle: false,
 }
 ```

@@ -28,7 +28,7 @@ class Vast extends Plugin {
       addSkipButton: true,
       skipButtonOptions: {
         text: 'skip >>',
-        cssText: 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block',
+        inlineStyle: 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block',
         resetStyle: false,
       },
       debug: false,
@@ -436,18 +436,18 @@ class Vast extends Plugin {
     this.debug('addSkipButton');
     if (this.options.addSkipButton && creative.skipDelay > 0) {
       const { skipDelay } = creative;
-      const { skipButtonOptions: { cssText, text, resetStyle } } = this.options;
+      const { skipButtonOptions: { inlineStyle, text, resetStyle } } = this.options;
       let skipRemainingTime = Math.round(skipDelay - this.player.currentTime());
       let isSkippable = skipRemainingTime < 1;
       // add the skip button
       const skipButtonDiv = document.createElement('div');
       skipButtonDiv.id = 'videojs-vast-skipButton';
       skipButtonDiv.style.cssText = 'bottom: 90px; cursor: default; padding: 15px; position: absolute; right: 0; z-index: 3; background: rgba(0, 0, 0, 0.8); min-width: 30px; pointer-events: none; display:block;';
-      if (cssText && cssText !== '') {
+      if (inlineStyle && inlineStyle !== '') {
         if (resetStyle) {
-          skipButtonDiv.style.cssText = cssText;
+          skipButtonDiv.style.cssText = inlineStyle;
         } else {
-          skipButtonDiv.style.cssText += cssText;
+          skipButtonDiv.style.cssText += inlineStyle;
         }
       }
       skipButtonDiv.innerHTML = isSkippable ? text : skipRemainingTime.toFixed();
