@@ -71,7 +71,11 @@
     "url": "https://github.com/ArteGEIE/videojs-vast.git"
   },
   "keywords": [
-    "vast"
+    "vast",
+    "videojs-plugin",
+    "videojs",
+    "video.js",
+    "vmap"
   ],
   "author": "ARTE",
   "bugs": {
