@@ -42,16 +42,16 @@
     "test:open": "cypress open"
   },
   "dependencies": {
-    "@dailymotion/vast-client": "^4.0.1",
+    "@dailymotion/vast-client": "^5.0.0",
     "@dailymotion/vmap": "^3.3.1",
     "videojs-contrib-ads": "^7.2.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.21.5",
     "concurrently": "^8.0.1",
-    "conventional-changelog-cli": "^2.2.2",
-    "conventional-commits-parser": "^3.2.4",
-    "cypress": "^13.6.4",
+    "conventional-changelog-cli": "^4.1.0",
+    "conventional-commits-parser": "^5.0.0",
+    "cypress": "^13.7.3",
     "esbuild": "^0.17.18",
     "eslint": "^8.40.0",
     "eslint-config-airbnb-base": "^15.0.0",
@@ -62,7 +62,7 @@
     "standard-version": "^9.5.0",
     "video.js": "^8.3.0",
     "wait-on": "^7.0.1",
-    "watch": "^0.13.0",
+    "watch": "^1.0.2",
     "yargs": "^17.7.2"
   },
   "description": "Open Source VAST plugin for VideoJS",
