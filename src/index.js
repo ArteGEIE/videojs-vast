@@ -651,6 +651,7 @@ class Vast extends Plugin {
   dispose() {
     this.debug('dispose');
     this.removeEventsListeners();
+    this.removeDomElements();
     super.dispose();
   }
 
