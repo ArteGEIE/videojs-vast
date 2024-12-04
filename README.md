@@ -64,7 +64,7 @@ videojsInstance.on('vast.play', (event, data) => {
 
 See demo here
 
-https://improved-broccoli-49n36pm.pages.github.io
+https://artegeie.github.io/videojs-vast/
 
 #### Implementing a CTA
 
