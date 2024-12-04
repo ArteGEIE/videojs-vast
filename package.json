@@ -68,7 +68,7 @@
   "description": "Open Source VAST plugin for VideoJS",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ArteGEIE/videojs-vast.git"
+    "url": "git+https://github.com/ArteGEIE/videojs-vast.git"
   },
   "keywords": [
     "vast",
