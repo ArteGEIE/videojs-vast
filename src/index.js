@@ -455,6 +455,10 @@ class Vast extends Plugin {
       this.player.el().appendChild(skipButtonDiv);
       // update time
       this.skipInterval = setInterval(() => {
+        if (!this.player) {
+          this.clearSkipInterval();
+          return;
+        }
         skipRemainingTime = Math.round(skipDelay - this.player.currentTime());
         isSkippable = skipRemainingTime < 1;
         if (isSkippable) {
