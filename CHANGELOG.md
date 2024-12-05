@@ -1,3 +1,18 @@
+## [1.5.1](https://github.com/ArteGEIE/videojs-vast/compare/1.4.0...1.5.1) (2024-12-05)
+
+
+### Bug Fixes
+
+* **VAST-68:** Fix demo url in readme ([#65](https://github.com/ArteGEIE/videojs-vast/issues/65)) ([18081b2](https://github.com/ArteGEIE/videojs-vast/commit/18081b2f71b47e3010bb50d4509acaa5e873aff5))
+* **VAST-69:** Fix error this.player is null ([#66](https://github.com/ArteGEIE/videojs-vast/issues/66)) ([84cbab9](https://github.com/ArteGEIE/videojs-vast/commit/84cbab9abc2cff87bafa6c9c1f90f4cb1d252172))
+
+
+### Features
+
+* **VAST-67:** add keywords to be listed in official plugins list ([#62](https://github.com/ArteGEIE/videojs-vast/issues/62)) ([a6dc8ab](https://github.com/ArteGEIE/videojs-vast/commit/a6dc8abd2476c687d75b2604f5ce874c8508dd94))
+
+
+
 # [1.4.0](https://github.com/ArteGEIE/videojs-vast/compare/1.3.0...1.4.0) (2024-02-07)
 
 
