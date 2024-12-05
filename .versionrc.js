@@ -76,7 +76,7 @@ const config = () => ({
       isPrerelease ? '' : `git merge --no-commit --no-ff ${releaseBranch}`,
       isPrerelease ? '' : 'git merge --abort',
       isPrerelease ? '' : `git checkout ${releaseBranch}`,
-      'npm publish',
+      'npm publish --access=public',
       `git push origin HEAD:${releaseBranch}`,
 
       // <-- RELEASE ONLY, WE CAN MERGE DELETE BRANCHES AND TAG
