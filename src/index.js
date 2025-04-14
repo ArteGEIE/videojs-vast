@@ -59,6 +59,7 @@ class Vast extends Plugin {
     const videojsContribAdsOptions = {
       debug: this.options.debug,
       timeout: this.options.timeout,
+      liveCuePoints: false, // fix playback restore on live streams (VAST-70)
     };
 
     // initialize videojs-contrib-ads
