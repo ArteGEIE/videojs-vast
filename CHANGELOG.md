@@ -1,3 +1,12 @@
+## [1.5.3](https://github.com/ArteGEIE/videojs-vast/compare/1.5.2...1.5.3) (2025-06-24)
+
+
+### Bug Fixes
+
+* **VAST-70:** Fix suppressedTracks error on live streams ([#69](https://github.com/ArteGEIE/videojs-vast/issues/69)) ([3c06fdd](https://github.com/ArteGEIE/videojs-vast/commit/3c06fdd279051cb460521bf2ae54dede637d9ba8))
+
+
+
 ## [1.5.2](https://github.com/ArteGEIE/videojs-vast/compare/1.5.1...1.5.2) (2025-06-24)
 
 
