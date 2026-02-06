@@ -70,18 +70,19 @@ class Vast extends Plugin {
       console.error(e);
     }
 
+    const self = this;
     if (options.vmapUrl) {
-      this.handleVMAP(options.vmapUrl);
+      self.handleVMAP(options.vmapUrl);
     } else {
-      this.disablePostroll();
+      self.disablePostroll();
       (async () => {
-        await this.handleVAST(options.vastUrl, () => {
-          this.disablePreroll();
+        await self.handleVAST(options.vastUrl, () => {
+          self.disablePreroll();
         });
-        if (this.adsArray.length > 0) {
-          this.addEventsListeners();
+        if (self.adsArray.length > 0) {
+          self.addEventsListeners();
           // has to be done outside of handleVAST because not done at the same moment for VMAP case
-          this.player.trigger('adsready');
+          self.player.trigger('adsready');
         }
       })();
     }
