@@ -10,6 +10,10 @@
 
 
 
+## [1.5.4](https://github.com/ArteGEIE/videojs-vast/compare/1.5.3...1.5.4) (2026-02-06)
+
+
+
 ## [1.5.3](https://github.com/ArteGEIE/videojs-vast/compare/1.5.2...1.5.3) (2025-06-24)
 
 
