@@ -31,3 +31,4 @@ build/
 /**/coverage/
 node_modules
 cypress/screenshots/*
+CLAUDE.md
