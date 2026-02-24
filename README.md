@@ -21,7 +21,8 @@ Table of contents
 * [Implementing a CTA](#implementing-a-cta)
 * [Options](#options)
 * [Events](#events)
-* [Runnning locally](#runnning-locally)
+* [Running locally](#running-locally)
+* [Testing](#testing)
 * [Credits](#credits)
 * [License](#license)
 
@@ -65,7 +66,7 @@ const vastVjsOptions = {
 videoJsInstance.vast(vastVjsOptions);
 
 // Do something with Ads events
-videojsInstance.on('vast.play', (event, data) => {
+videoJsInstance.on('vast.play', (event, data) => {
     console.log('Ad is playing');
 });
 ```
@@ -98,7 +99,7 @@ This plugin currently supports a handful of options that might help you customiz
 * **debug** (boolean) - Display detailed logging in the browser console. ***Default: false***
 * **addCtaClickZone** (boolean) - Add or not a clickzone for the cta url. ***Default: true***
 * **addSkipButton** (boolean) - Add or not a skip button for skippable ads. ***Default: true***
-* **skipButtonOptions** (object) - Customize skip button text and style. ⚠️ ***inlineStyle*** option extends the default value, unless ***resetStyle*** is set to `true`.
+* **skipButtonOptions** (object) - Customize skip button text and style. Warning: ***inlineStyle*** option extends the default value, unless ***resetStyle*** is set to `true`.
 ***Defaults:***
 ```
 {
@@ -114,7 +115,7 @@ The plugin communicates with the consumer through default event bus built into V
 
 ```
 // Do something when there is an ad time update
-videojsInstance.on('vast.time', (event, data) => {
+videoJsInstance.on('vast.time', (event, data) => {
     console.log('Ad is playing');
     console.log('Current position - ' + data.position);
     console.log('Total Duration - ' + data.duration);
@@ -123,26 +124,35 @@ videojsInstance.on('vast.time', (event, data) => {
 
 Below you can find a list of the events currently supported. Just like the plugin options, this is a work in progress and more events should be available in the future, especially if requested through this repository.
 
-* **vast.canplay** - The plugin successfully parsed the VAST manifest and is capable of playing an ad
 * **vast.playAttempt** - The plugin will try and play a creative of an ad. It might be the case that the creative fails to load, in which case **vast.play** will never be fired
-* **vast.play** - The plugin started playing a creative
-* **vast.time** - Called every 100ms or so, this event gives the consumer an update of the current position within a creative
+* **vast.play** - The plugin started playing a creative. Contains `ctaUrl`, `skipDelay`, `adClickCallback` and `duration`
+* **vast.metadata** - Fired when ad metadata is available. Contains `duration`, `id`, `adId` and `type`
+* **vast.time** - Called on each time update during ad playback. Contains `position`, `currentTime` and `duration`
+* **vast.skip** - Called when the user skips the current ad
 * **vast.complete** - Called once the current ad pod (set of ads) is done playing
-* **vast.error** - Called if the plugin fails at some point in the process
-* **vast.click** - Called once the plugin succeffully registers a click in the call to action element associated with an ad - check the [Implementing a CTA](#implementing-a-cta) section for more details
+* **vast.click** - Called once the plugin successfully registers a click in the call to action element associated with an ad - check the [Implementing a CTA](#implementing-a-cta) section for more details
+* **vast.error** - Called if the plugin fails at some point in the process. Contains `message` and optionally `tag`
 
-#### Runnning locally
+#### Running locally
 
-Running the plugin locally to further develop it is quite simple. Since the plugin repository does not contain any self contained development environment, we recommend using [**yalc**](https://www.npmjs.com/package/yalc) to publish the package in a local repository and then use [**yalc**](https://www.npmjs.com/package/yalc) again to install the plugin from the same local repository in in a dedicated development environment or even within the project you are working on.
+The plugin includes a self-contained development environment with a demo page.
 
-Here's a small step-by-step to run the plugin locally.
-
-* Install Yalc globally with ```npm i yalc -g``` or, using yarn: ```yarn global add yalc```
 * Clone the repository with ```git clone https://github.com/ArteGEIE/videojs-vast.git```
-* Install the plugin dependencies with ```npm install```
-* Run the plugin in watch mode with ```npm start```, leave this terminal open while you are working on the plugin's code
-* In your local project, run ```yalc add videojs-vast``` to install the plugin from your local repository
-* Run your project normally, it will consume the local version of the plugin
+* Install dependencies with ```npm install```
+* Run ```npm start``` to start the dev environment (serves the demo on http://localhost:3333, watches for changes and rebuilds automatically)
+
+If you prefer using [**yalc**](https://www.npmjs.com/package/yalc) to test the plugin within your own project:
+
+* Install Yalc globally with ```npm i yalc -g```
+* Run ```npm run build:local``` to build and push to the local yalc registry
+* In your project, run ```yalc add @artegie/videojs-vast```
+
+#### Testing
+
+* ```npm test``` - Run all tests (unit + E2E)
+* ```npm run test:unit``` - Run unit tests (Vitest)
+* ```npm run test:e2e``` - Run E2E tests (Cypress, requires the dev server on port 3333)
+* ```npm run test:open``` - Open Cypress interactive runner
 
 #### Credits
 
