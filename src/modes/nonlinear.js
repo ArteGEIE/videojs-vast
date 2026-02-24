@@ -34,7 +34,12 @@ export function playNonLinearAd(creative) {
       }
       resourceContainer.appendChild(resource);
       if (variation.adSlotID) {
-        document.querySelector(`#${variation.adSlotID}`).appendChild(resourceContainer);
+        const adSlot = document.querySelector(`#${variation.adSlotID}`);
+        if (adSlot) {
+          adSlot.appendChild(resourceContainer);
+        } else {
+          console.warn(`VastVjs: adSlotID #${variation.adSlotID} not found in DOM`);
+        }
       } else {
         this.player.el().appendChild(resourceContainer);
       }
@@ -55,7 +60,12 @@ export function playNonLinearAd(creative) {
       resourceContainer.innerHTML = variation.htmlResource;
 
       if (variation.adSlotID) {
-        document.querySelector(`#${variation.adSlotID}`).appendChild(resourceContainer);
+        const adSlot = document.querySelector(`#${variation.adSlotID}`);
+        if (adSlot) {
+          adSlot.appendChild(resourceContainer);
+        } else {
+          console.warn(`VastVjs: adSlotID #${variation.adSlotID} not found in DOM`);
+        }
       } else {
         this.player.el().appendChild(resourceContainer);
       }
@@ -81,7 +91,12 @@ export function playNonLinearAd(creative) {
 
       resourceContainer.src = variation.iframeResource;
       if (variation.adSlotID) {
-        document.querySelector(`#${variation.adSlotID}`).appendChild(resourceContainer);
+        const adSlot = document.querySelector(`#${variation.adSlotID}`);
+        if (adSlot) {
+          adSlot.appendChild(resourceContainer);
+        } else {
+          console.warn(`VastVjs: adSlotID #${variation.adSlotID} not found in DOM`);
+        }
       } else {
         this.player.el().appendChild(resourceContainer);
       }
