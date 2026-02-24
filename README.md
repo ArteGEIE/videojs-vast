@@ -29,9 +29,17 @@ Table of contents
 
 In order to start using the VAST Plugin you are supposed to have started a project that consumes VideosJS and have some basic knowledge of its basic concepts and API. To get started, install and include this package in your project's dependencies using npm or yarn:
 
+First, configure your `.npmrc` to use GitHub Packages for the `@artegie` scope:
+
 ```
-npm install --save @arte/videojs-vast
-yarn add @arte/videojs-vast
+@artegie:registry=https://npm.pkg.github.com
+```
+
+Then install the package:
+
+```
+npm install --save @artegie/videojs-vast
+yarn add @artegie/videojs-vast
 ```
 
 Now, import the plugin package and initialize it right after initializing your VideoJS instance. Here's a small snipet that of what it could look like:
@@ -39,7 +47,7 @@ Now, import the plugin package and initialize it right after initializing your V
 ```
 // Import the necessary packages
 import videojs from 'video.js';
-import '@arte/videojs-vast';
+import '@artegie/videojs-vast';
 
 // Create VideoJS instance
 const videoJsInstance = videojs('my-player', {
