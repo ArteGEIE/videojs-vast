@@ -487,6 +487,7 @@ class Vast extends Plugin {
 
   onAdError = (evt) => {
     this.debug('aderror');
+    this.clearSkipInterval();
     // trigger a tracker error
     this.linearVastTracker?.error({
       ...this.macros,
