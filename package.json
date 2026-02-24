@@ -35,11 +35,11 @@
     "ci:changelog": "conventional-changelog --preset angular --same-file --infile CHANGELOG.md",
     "lint": "eslint ./src",
     "release": "standard-version",
-    "serve": "serve -l 3000 docs",
+    "serve": "serve -l 3333 docs",
     "start": "concurrently \"npm run serve\" \"watch --interval=1 'npm run bundle:demo' ./src/\" \"watch --interval=1 'npm run build:local' ./src/\"",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
-    "test:e2e": "wait-on http://localhost:3000/ & cypress run --browser chrome",
+    "test:e2e": "wait-on http://localhost:3333/ & cypress run --browser chrome",
     "test:open": "cypress open"
   },
   "dependencies": {
