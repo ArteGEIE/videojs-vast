@@ -243,18 +243,21 @@ class Vast extends Plugin {
       this.player.ads.skipLinearAdMode();
     }
     if (currentAd.hasNonlinearCreative()) {
-      // TODO: remove those listeners
-      this.player.one(currentAd.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+      this.cleanupReadAdListeners();
+      const nonlinearEvent = currentAd.hasLinearCreative() ? 'adplaying' : 'playing';
+      this.onNonLinearReady = () => {
         this.nonLinearVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.nonlinearCreative(), 'NonLinearAd');
         this.playNonLinearAd(currentAd.nonlinearCreative());
-      });
+      };
+      this.player.one(nonlinearEvent, this.onNonLinearReady);
     }
     if (currentAd.hasCompanionCreative()) {
-      // TODO: remove those listeners
-      this.player.one(currentAd.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+      const companionEvent = currentAd.hasLinearCreative() ? 'adplaying' : 'playing';
+      this.onCompanionReady = () => {
         this.companionVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.companionCreative(), 'CompanionAd');
         this.playCompanionAd(currentAd.companionCreative());
-      });
+      };
+      this.player.one(companionEvent, this.onCompanionReady);
     }
   }
 
@@ -609,8 +612,22 @@ class Vast extends Plugin {
     window.addEventListener('beforeunload', this.onUnload);
   }
 
+  cleanupReadAdListeners() {
+    if (this.onNonLinearReady) {
+      this.player.off('adplaying', this.onNonLinearReady);
+      this.player.off('playing', this.onNonLinearReady);
+      this.onNonLinearReady = null;
+    }
+    if (this.onCompanionReady) {
+      this.player.off('adplaying', this.onCompanionReady);
+      this.player.off('playing', this.onCompanionReady);
+      this.onCompanionReady = null;
+    }
+  }
+
   removeEventsListeners() {
     this.debug('removeEventsListeners');
+    this.cleanupReadAdListeners();
     this.player.off('adplaying', this.onAdPlay);
     this.player.off('adplaying', this.onFirstPlay);
     this.player.off('adpause', this.onAdPause);
