@@ -293,9 +293,9 @@ class Vast extends Plugin {
     this.debug('adplay');
     // don't track the very first play to avoid sending resume tracker event
     if (parseInt(this.player.currentTime(), 10) > 0) {
-      this.linearVastTracker.setPaused(false, {
+      this.linearVastTracker?.setPaused(false, {
         ...this.macros,
-        ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+        ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
       });
     }
   };
@@ -304,9 +304,9 @@ class Vast extends Plugin {
     this.debug('adpause');
     // don't track the pause event triggered before complete
     if (this.player.duration() - this.player.currentTime() > 0.2) {
-      this.linearVastTracker.setPaused(true, {
+      this.linearVastTracker?.setPaused(true, {
         ...this.macros,
-        ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+        ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
       });
     }
   };
@@ -314,7 +314,7 @@ class Vast extends Plugin {
   // Track timeupdate-related events
   onAdTimeUpdate = () => {
     // Set progress to track automated trackign events
-    this.linearVastTracker.setProgress(this.player.currentTime(), this.macros);
+    this.linearVastTracker?.setProgress(this.player.currentTime(), this.macros);
     this.player.trigger('vast.time', { position: this.player.currentTime(), currentTime: this.player.currentTime(), duration: this.player.duration() });
   };
 
@@ -400,22 +400,22 @@ class Vast extends Plugin {
     // Trigger an event to notify the player consumer that the ad is playing
     this.player.trigger('vast.play', {
       ctaUrl: this.ctaUrl,
-      skipDelay: this.linearVastTracker.skipDelay,
+      skipDelay: this.linearVastTracker?.skipDelay,
       adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
       duration: this.player.duration(),
     });
     // Track the impression of an ad
-    this.linearVastTracker.load({
+    this.linearVastTracker?.load({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
 
-    this.linearVastTracker.trackImpression({
+    this.linearVastTracker?.trackImpression({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
-    this.linearVastTracker.overlayViewDuration(
-      this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    this.linearVastTracker?.overlayViewDuration(
+      this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
       this.macros,
     );
 
@@ -487,9 +487,8 @@ class Vast extends Plugin {
 
   onAdError = (evt) => {
     this.debug('aderror');
-    // const error = this.player.error();
     // trigger a tracker error
-    this.linearVastTracker.error({
+    this.linearVastTracker?.error({
       ...this.macros,
       ERRORCODE: 900, // undefined error, to be improved
     });
@@ -536,9 +535,9 @@ class Vast extends Plugin {
     this.player.trigger('vast.skip');
 
     // Track skip event
-    this.linearVastTracker.skip({
+    this.linearVastTracker?.skip({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
 
     // delete ctadiv, skip btn, icons, companions or nonlinear elements
@@ -560,9 +559,9 @@ class Vast extends Plugin {
     this.debug('adended');
 
     // Track the end of an ad
-    this.linearVastTracker.complete({
+    this.linearVastTracker?.complete({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
 
     // delete ctadiv, skip btn, icons, companions or nonlinear elements
@@ -655,9 +654,9 @@ class Vast extends Plugin {
     this.player.trigger('vast.click');
     window.open(ctaUrl, '_blank');
     // Track when a user clicks on an ad
-    this.linearVastTracker.click(null, {
+    this.linearVastTracker?.click(null, {
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
   };
 
