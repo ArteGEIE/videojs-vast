@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { applyNonLinearCommonDomStyle } from '../lib/utils';
+import { applyNonLinearCommonDomStyle, sanitizeHtml } from '../lib/utils';
 
 /*
 * This method is responsible for rendering a nonlinear ad
@@ -54,7 +54,7 @@ export function playCompanionAd(creative) {
           window.open(variation.companionClickThroughURLTemplate, '_blank');
           this.companionVastTracker.click(null, this.macros);
         });
-        resourceContainer.innerHTML = htmlResource;
+        resourceContainer.innerHTML = sanitizeHtml(htmlResource);
         if (variation.adSlotID) {
           const adSlot = document.querySelector(`#${variation.adSlotID}`);
           if (adSlot) {
