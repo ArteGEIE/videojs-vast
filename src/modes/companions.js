@@ -5,12 +5,12 @@ import { applyNonLinearCommonDomStyle } from '../lib/utils';
 * This method is responsible for rendering a nonlinear ad
 */
 export function playCompanionAd(creative) {
-  creative.variations.map((variation) => {
+  creative.variations.forEach((variation) => {
     this.companionVastTracker.trackImpression(this.macros);
 
     // image
     if (variation.staticResources && variation.staticResources.length > 0) {
-      variation.staticResources.map((staticResource) => {
+      variation.staticResources.forEach((staticResource) => {
         const resourceContainer = document.createElement('div');
         this.domElements.push(resourceContainer);
         resourceContainer.width = variation.staticResources.width > 0 ? variation.staticResources.width : 100;
@@ -32,13 +32,12 @@ export function playCompanionAd(creative) {
         } else {
           this.player.el().appendChild(resourceContainer);
         }
-        return staticResource;
       });
     }
 
     // html
     if (variation.htmlResources) {
-      variation.htmlResources.map((htmlResource) => {
+      variation.htmlResources.forEach((htmlResource) => {
         const resourceContainer = document.createElement('div');
         this.domElements.push(resourceContainer);
         resourceContainer.width = variation.htmlResources.width;
@@ -56,13 +55,12 @@ export function playCompanionAd(creative) {
         } else {
           this.player.el().appendChild(resourceContainer);
         }
-        return htmlResource;
       });
     }
 
     // iframe
     if (variation.iframeResources) {
-      variation.iframeResources.map((iframeResource) => {
+      variation.iframeResources.forEach((iframeResource) => {
         const resourceContainer = document.createElement('div');
         this.domElements.push(resourceContainer);
         resourceContainer.width = variation.iframeResources.width;
@@ -80,9 +78,7 @@ export function playCompanionAd(creative) {
         } else {
           this.player.el().appendChild(resourceContainer);
         }
-        return iframeResource;
       });
     }
-    return variation;
   });
 }

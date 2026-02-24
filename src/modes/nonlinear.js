@@ -4,7 +4,7 @@ import { applyNonLinearCommonDomStyle, getCloseButton } from '../lib/utils';
 * This method is responsible for rendering a nonlinear ad
 */
 export function playNonLinearAd(creative) {
-  creative.variations.map((variation) => {
+  creative.variations.forEach((variation) => {
     this.nonLinearVastTracker.trackImpression(this.macros);
 
     // image
@@ -91,6 +91,5 @@ export function playNonLinearAd(creative) {
         }, variation.minSuggestedDuration * 1000);
       }
     }
-    return variation;
   });
 }
