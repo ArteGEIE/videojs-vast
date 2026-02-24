@@ -1,4 +1,4 @@
-import { applyNonLinearCommonDomStyle, getCloseButton } from '../lib/utils';
+import { applyNonLinearCommonDomStyle, getCloseButton, sanitizeHtml } from '../lib/utils';
 
 /*
 * This method is responsible for rendering a nonlinear ad
@@ -57,7 +57,7 @@ export function playNonLinearAd(creative) {
 
       resourceContainer.style.maxWidth = variation.expandedWidth;
       resourceContainer.style.maxHeight = variation.expandedHeight;
-      resourceContainer.innerHTML = variation.htmlResource;
+      resourceContainer.innerHTML = sanitizeHtml(variation.htmlResource);
 
       if (variation.adSlotID) {
         const adSlot = document.querySelector(`#${variation.adSlotID}`);

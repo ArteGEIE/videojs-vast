@@ -1,3 +1,30 @@
+const DANGEROUS_EVENT_ATTRS = /^on\w+/i;
+const DANGEROUS_URI_PATTERN = /^\s*javascript\s*:/i;
+const DANGEROUS_TAGS = new Set(['script', 'object', 'embed', 'applet']);
+
+export const sanitizeHtml = (html) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = (node) => {
+    const children = [...node.children];
+    children.forEach((child) => {
+      if (DANGEROUS_TAGS.has(child.tagName.toLowerCase())) {
+        child.remove();
+        return;
+      }
+      [...child.attributes].forEach((attr) => {
+        if (DANGEROUS_EVENT_ATTRS.test(attr.name)) {
+          child.removeAttribute(attr.name);
+        } else if (DANGEROUS_URI_PATTERN.test(attr.value)) {
+          child.removeAttribute(attr.name);
+        }
+      });
+      walk(child);
+    });
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+};
+
 export const isNumeric = (str) => {
   if (typeof str === 'number') {
     return true;
