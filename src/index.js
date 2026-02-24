@@ -2,6 +2,7 @@ import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker, VASTParser } from '@dailymotion/vast-client';
 import { addIcons } from './features/icons';
+import { addEventsListeners, removeEventsListeners, cleanupReadAdListeners } from './features/eventManager';
 import { playLinearAd } from './modes/linear';
 import { playCompanionAd } from './modes/companions';
 import { playNonLinearAd } from './modes/nonlinear';
@@ -272,20 +273,22 @@ class Vast extends Plugin {
       return null;
     }
     const nextAd = this.adsArray.shift();
+    const linear = nextAd.creatives.find((c) => c.type === 'linear');
+    const companion = nextAd.creatives.find((c) => c.type === 'companion');
+    const nonlinear = nextAd.creatives.find((c) => c.type === 'nonlinear');
+
+    const hasValidLinear = linear
+      && linear.mediaFiles.length > 0
+      && linear.mediaFiles.some((mf) => mf.fileURL !== '');
+
     return {
       ad: nextAd,
-      hasLinearCreative: () => {
-        // find linear content
-        const linear = nextAd.creatives.find((creative) => creative.type === 'linear') !== undefined && nextAd.creatives.filter((creative) => creative.type === 'linear')[0];
-        // check if at least one mediaFile is provided
-        const hasMediaFile = linear.mediaFiles.length > 0 && linear.mediaFiles.some((mediaFile) => mediaFile.fileURL !== '');
-        return linear && hasMediaFile;
-      },
-      linearCreative: () => nextAd.creatives.filter((creative) => creative.type === 'linear')[0],
-      hasCompanionCreative: () => nextAd.creatives.find((creative) => creative.type === 'companion') !== undefined,
-      companionCreative: () => nextAd.creatives.filter((creative) => creative.type === 'companion')[0],
-      hasNonlinearCreative: () => nextAd.creatives.find((creative) => creative.type === 'nonlinear') !== undefined,
-      nonlinearCreative: () => nextAd.creatives.filter((creative) => creative.type === 'nonlinear')[0],
+      hasLinearCreative: () => !!hasValidLinear,
+      linearCreative: () => linear,
+      hasCompanionCreative: () => !!companion,
+      companionCreative: () => companion,
+      hasNonlinearCreative: () => !!nonlinear,
+      nonlinearCreative: () => nonlinear,
     };
   }
 
@@ -343,30 +346,27 @@ class Vast extends Plugin {
   onAdVolumeChange = () => {
     this.debug('volume');
     if (!this.linearVastTracker) {
-      return false;
+      return;
     }
     // Track the user muting or unmuting the video
     this.linearVastTracker.setMuted(this.player.muted(), {
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
-    return true;
   };
 
   onAdFullScreen = (evt, data) => {
     this.debug('fullscreen');
     if (!this.linearVastTracker) {
-      return false;
+      return;
     }
-    // Track skip event
     this.linearVastTracker.setFullscreen(data.state);
-    return true;
   };
 
   // Track when user closes the video
   onUnload = () => {
     if (!this.linearVastTracker) {
-      return false;
+      return;
     }
 
     this.linearVastTracker.close({
@@ -374,7 +374,6 @@ class Vast extends Plugin {
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
     this.removeEventsListeners();
-    return null;
   };
 
   // Notify the player if we reach a timeout while trying to load the ad
@@ -401,7 +400,7 @@ class Vast extends Plugin {
     this.player.trigger('vast.play', {
       ctaUrl: this.ctaUrl,
       skipDelay: this.linearVastTracker?.skipDelay,
-      adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
+      adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : null,
       duration: this.player.duration(),
     });
     // Track the impression of an ad
@@ -592,62 +591,6 @@ class Vast extends Plugin {
     }
   }
 
-  addEventsListeners() {
-    // ad events
-    this.player.one('adplaying', this.onFirstPlay);
-    this.player.on('adplaying', this.onAdPlay);
-    this.player.on('adpause', this.onAdPause);
-    this.player.on('adtimeupdate', this.onAdTimeUpdate);
-    this.player.on('advolumechange', this.onAdVolumeChange);
-    this.player.on('adfullscreen', this.onAdFullScreen);
-    this.player.on('adtimeout', this.onAdTimeout);
-    this.player.on('adstart', this.onAdStart);
-    this.player.on('aderror', this.onAdError);
-    this.player.on('readyforpreroll', this.onReadyForPreroll);
-    this.player.on('readyforpostroll', this.onReadyForPostroll);
-    this.player.on('skip', this.onSkip);
-    this.player.on('adended', this.onAdEnded);
-    this.player.on('ended', this.onEnded);
-    this.player.on('dispose', this.onDispose);
-    window.addEventListener('beforeunload', this.onUnload);
-  }
-
-  cleanupReadAdListeners() {
-    if (this.onNonLinearReady) {
-      this.player.off('adplaying', this.onNonLinearReady);
-      this.player.off('playing', this.onNonLinearReady);
-      this.onNonLinearReady = null;
-    }
-    if (this.onCompanionReady) {
-      this.player.off('adplaying', this.onCompanionReady);
-      this.player.off('playing', this.onCompanionReady);
-      this.onCompanionReady = null;
-    }
-  }
-
-  removeEventsListeners() {
-    this.debug('removeEventsListeners');
-    this.cleanupReadAdListeners();
-    this.player.off('adplaying', this.onAdPlay);
-    this.player.off('adplaying', this.onFirstPlay);
-    this.player.off('adpause', this.onAdPause);
-    this.player.off('adtimeupdate', this.onAdTimeUpdate);
-    this.player.off('advolumechange', this.onAdVolumeChange);
-    this.player.off('adfullscreen', this.onAdFullScreen);
-    this.player.off('adtimeout', this.onAdTimeout);
-    this.player.off('adstart', this.onAdStart);
-    this.player.off('aderror', this.onAdError);
-    // added only if some midrolls have been found, remove by security
-    this.player.off('timeupdate', this.onProgress);
-    this.player.off('readyforpreroll', this.onReadyForPreroll);
-    this.player.off('readyforpostroll', this.onReadyForPostroll);
-    this.player.off('skip', this.onSkip);
-    this.player.off('adended', this.onAdEnded);
-    this.player.off('ended', this.onEnded);
-    this.player.off('dispose', this.onDispose);
-    window.removeEventListener('beforeunload', this.onUnload);
-  }
-
   /*
   * This method is responsible for dealing with the click on the ad
   */
@@ -749,6 +692,9 @@ Vast.prototype.playLinearAd = playLinearAd;
 Vast.prototype.playNonLinearAd = playNonLinearAd;
 Vast.prototype.playCompanionAd = playCompanionAd;
 Vast.prototype.addIcons = addIcons;
+Vast.prototype.addEventsListeners = addEventsListeners;
+Vast.prototype.removeEventsListeners = removeEventsListeners;
+Vast.prototype.cleanupReadAdListeners = cleanupReadAdListeners;
 
 export default Vast;
 

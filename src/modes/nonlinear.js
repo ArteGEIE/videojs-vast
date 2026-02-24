@@ -1,4 +1,6 @@
-import { applyNonLinearCommonDomStyle, getCloseButton, sanitizeHtml } from '../lib/utils';
+import {
+  applyNonLinearCommonDomStyle, getCloseButton, sanitizeHtml, appendToSlotOrPlayer,
+} from '../lib/utils';
 
 /*
 * This method is responsible for rendering a nonlinear ad
@@ -7,6 +9,11 @@ export function playNonLinearAd(creative) {
   creative.variations.forEach((variation) => {
     this.nonLinearVastTracker.trackImpression(this.macros);
 
+    const clickHandler = () => {
+      window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
+      this.nonLinearVastTracker.click(null, this.macros);
+    };
+
     // image
     if (variation.staticResource) {
       const resourceContainer = document.createElement('div');
@@ -14,10 +21,7 @@ export function playNonLinearAd(creative) {
       applyNonLinearCommonDomStyle(resourceContainer);
 
       const resource = document.createElement('img');
-      resource.addEventListener('click', () => {
-        window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
-        this.nonLinearVastTracker.click(null, this.macros);
-      });
+      resource.addEventListener('click', clickHandler);
       resourceContainer.style.maxWidth = variation.expandedWidth;
       resourceContainer.style.maxHeight = variation.expandedHeight;
       resource.src = variation.staticResource;
@@ -33,16 +37,7 @@ export function playNonLinearAd(creative) {
         }, variation.minSuggestedDuration * 1000);
       }
       resourceContainer.appendChild(resource);
-      if (variation.adSlotID) {
-        const adSlot = document.querySelector(`#${variation.adSlotID}`);
-        if (adSlot) {
-          adSlot.appendChild(resourceContainer);
-        } else {
-          console.warn(`VastVjs: adSlotID #${variation.adSlotID} not found in DOM`);
-        }
-      } else {
-        this.player.el().appendChild(resourceContainer);
-      }
+      appendToSlotOrPlayer(resourceContainer, variation.adSlotID, this.player.el());
     }
 
     // html
@@ -50,25 +45,13 @@ export function playNonLinearAd(creative) {
       const resourceContainer = document.createElement('div');
       this.domElements.push(resourceContainer);
       applyNonLinearCommonDomStyle(resourceContainer);
-      resourceContainer.addEventListener('click', () => {
-        window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
-        this.nonLinearVastTracker.click(null, this.macros);
-      });
+      resourceContainer.addEventListener('click', clickHandler);
 
       resourceContainer.style.maxWidth = variation.expandedWidth;
       resourceContainer.style.maxHeight = variation.expandedHeight;
       resourceContainer.innerHTML = sanitizeHtml(variation.htmlResource);
 
-      if (variation.adSlotID) {
-        const adSlot = document.querySelector(`#${variation.adSlotID}`);
-        if (adSlot) {
-          adSlot.appendChild(resourceContainer);
-        } else {
-          console.warn(`VastVjs: adSlotID #${variation.adSlotID} not found in DOM`);
-        }
-      } else {
-        this.player.el().appendChild(resourceContainer);
-      }
+      appendToSlotOrPlayer(resourceContainer, variation.adSlotID, this.player.el());
       if (variation.minSuggestedDuration) {
         setTimeout(() => {
           resourceContainer.remove();
@@ -81,25 +64,13 @@ export function playNonLinearAd(creative) {
       const resourceContainer = document.createElement('iframe');
       this.domElements.push(resourceContainer);
       applyNonLinearCommonDomStyle(resourceContainer);
-      resourceContainer.addEventListener('click', () => {
-        window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
-        this.nonLinearVastTracker.click(null, this.macros);
-      });
+      resourceContainer.addEventListener('click', clickHandler);
 
       resourceContainer.style.maxWidth = variation.expandedWidth;
       resourceContainer.style.maxHeight = variation.expandedHeight;
 
       resourceContainer.src = variation.iframeResource;
-      if (variation.adSlotID) {
-        const adSlot = document.querySelector(`#${variation.adSlotID}`);
-        if (adSlot) {
-          adSlot.appendChild(resourceContainer);
-        } else {
-          console.warn(`VastVjs: adSlotID #${variation.adSlotID} not found in DOM`);
-        }
-      } else {
-        this.player.el().appendChild(resourceContainer);
-      }
+      appendToSlotOrPlayer(resourceContainer, variation.adSlotID, this.player.el());
       if (variation.minSuggestedDuration) {
         setTimeout(() => {
           resourceContainer.remove();

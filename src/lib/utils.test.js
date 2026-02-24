@@ -60,7 +60,7 @@ describe('convertTimeOffsetToSeconds', () => {
 
   it('converts hash-prefixed seconds', () => {
     const result = convertTimeOffsetToSeconds('#45');
-    expect(result).toBe('45');
+    expect(result).toBe(45);
   });
 
   it('converts HH:MM:SS timecode', () => {
@@ -89,12 +89,12 @@ describe('getBestCtaUrl', () => {
 
   it('returns false when no template exists', () => {
     const creative = {};
-    expect(getBestCtaUrl(creative)).toBe(false);
+    expect(getBestCtaUrl(creative)).toBeNull();
   });
 
   it('returns false when template has no url', () => {
     const creative = { videoClickThroughURLTemplate: {} };
-    expect(getBestCtaUrl(creative)).toBe(false);
+    expect(getBestCtaUrl(creative)).toBeNull();
   });
 });
 
@@ -142,8 +142,8 @@ describe('getPreroll', () => {
   const makeAdBreak = (timeOffset) => ({ timeOffset });
 
   it('returns false when no adBreaks', () => {
-    expect(getPreroll(null)).toBe(false);
-    expect(getPreroll(undefined)).toBe(false);
+    expect(getPreroll(null)).toBeNull();
+    expect(getPreroll(undefined)).toBeNull();
   });
 
   it('finds preroll with "start" offset', () => {
@@ -161,9 +161,9 @@ describe('getPreroll', () => {
     expect(getPreroll(adBreaks)).toEqual({ timeOffset: '00:00:00' });
   });
 
-  it('returns undefined when no preroll found', () => {
+  it('returns null when no preroll found', () => {
     const adBreaks = [makeAdBreak('00:01:00')];
-    expect(getPreroll(adBreaks)).toBeUndefined();
+    expect(getPreroll(adBreaks)).toBeNull();
   });
 });
 
@@ -171,8 +171,8 @@ describe('getPostroll', () => {
   const makeAdBreak = (timeOffset) => ({ timeOffset });
 
   it('returns false when no adBreaks', () => {
-    expect(getPostroll(null)).toBe(false);
-    expect(getPostroll(undefined)).toBe(false);
+    expect(getPostroll(null)).toBeNull();
+    expect(getPostroll(undefined)).toBeNull();
   });
 
   it('finds postroll with "end" offset', () => {
@@ -185,8 +185,8 @@ describe('getPostroll', () => {
     expect(getPostroll(adBreaks)).toEqual({ timeOffset: '100%' });
   });
 
-  it('returns undefined when no postroll found', () => {
+  it('returns null when no postroll found', () => {
     const adBreaks = [makeAdBreak('00:01:00')];
-    expect(getPostroll(adBreaks)).toBeUndefined();
+    expect(getPostroll(adBreaks)).toBeNull();
   });
 });
