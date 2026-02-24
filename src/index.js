@@ -680,7 +680,7 @@ class Vast extends Plugin {
 
   async handleVMAP(vmapUrl) {
     try {
-      const vmap = await fetchVmapUrl(vmapUrl);
+      const vmap = await fetchVmapUrl(vmapUrl, this.options.timeout);
       if (vmap.adBreaks && vmap.adBreaks.length > 0) {
         this.addEventsListeners();
         // handle preroll
