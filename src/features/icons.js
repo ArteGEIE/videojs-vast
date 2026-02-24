@@ -1,4 +1,4 @@
-import { isNumeric } from '../lib';
+import { isNumeric, sanitizeHtml } from '../lib';
 
 export function addIcons(ad) {
   const { icons } = ad.linearCreative();
@@ -17,7 +17,7 @@ export function addIcons(ad) {
         iconContainer.width = width > 0 ? width : 100;
       } else if (htmlResource) {
         iconContainer = document.createElement('div');
-        iconContainer.innerHTML = icon.htmlResource;
+        iconContainer.innerHTML = sanitizeHtml(icon.htmlResource);
       } else if (iframeResource) {
         iconContainer = document.createElement('iframe');
         iconContainer.src = iframeResource;

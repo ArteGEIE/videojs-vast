@@ -1,3 +1,30 @@
+const DANGEROUS_EVENT_ATTRS = /^on\w+/i;
+const DANGEROUS_URI_PATTERN = /^\s*javascript\s*:/i;
+const DANGEROUS_TAGS = new Set(['script', 'object', 'embed', 'applet']);
+
+export const sanitizeHtml = (html) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const walk = (node) => {
+    const children = [...node.children];
+    children.forEach((child) => {
+      if (DANGEROUS_TAGS.has(child.tagName.toLowerCase())) {
+        child.remove();
+        return;
+      }
+      [...child.attributes].forEach((attr) => {
+        if (DANGEROUS_EVENT_ATTRS.test(attr.name)) {
+          child.removeAttribute(attr.name);
+        } else if (DANGEROUS_URI_PATTERN.test(attr.value)) {
+          child.removeAttribute(attr.name);
+        }
+      });
+      walk(child);
+    });
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+};
+
 export const isNumeric = (str) => {
   if (typeof str === 'number') {
     return true;
@@ -20,7 +47,7 @@ export const convertTimeOffsetToSeconds = (timecode, duration = null) => {
   }
   // convert timeoffset in seconds from the start
   if (timecode.includes('#')) {
-    return timecode.replace('#', '');
+    return Number(timecode.replace('#', ''));
   }
   // convert timeoffset in timecode
   const [time, ms] = timecode.split('.');
@@ -91,7 +118,7 @@ export const getBestCtaUrl = (creative) => {
     && creative.videoClickThroughURLTemplate.url) {
     return creative.videoClickThroughURLTemplate.url;
   }
-  return false;
+  return null;
 };
 
 export const getMidrolls = (adBreaks) => {
@@ -113,14 +140,27 @@ export const getMidrolls = (adBreaks) => {
 
 export const getPreroll = (adBreaks) => {
   if (adBreaks) {
-    return adBreaks.filter((adBreak) => ['start', '0%', '00:00:00'].includes(adBreak.timeOffset))[0];
+    return adBreaks.find((adBreak) => ['start', '0%', '00:00:00'].includes(adBreak.timeOffset)) ?? null;
   }
-  return false;
+  return null;
+};
+
+export const appendToSlotOrPlayer = (element, adSlotID, playerEl) => {
+  if (adSlotID) {
+    const adSlot = document.querySelector(`#${adSlotID}`);
+    if (adSlot) {
+      adSlot.appendChild(element);
+    } else {
+      console.warn(`VastVjs: adSlotID #${adSlotID} not found in DOM`);
+    }
+  } else {
+    playerEl.appendChild(element);
+  }
 };
 
 export const getPostroll = (adBreaks) => {
   if (adBreaks) {
-    return adBreaks.filter((adBreak) => ['end', '100%'].includes(adBreak.timeOffset))[0];
+    return adBreaks.find((adBreak) => ['end', '100%'].includes(adBreak.timeOffset)) ?? null;
   }
-  return false;
+  return null;
 };

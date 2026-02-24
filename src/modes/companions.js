@@ -1,88 +1,67 @@
-/* eslint-disable max-len */
-import { applyNonLinearCommonDomStyle } from '../lib/utils';
+import { applyNonLinearCommonDomStyle, sanitizeHtml, appendToSlotOrPlayer } from '../lib/utils';
 
 /*
-* This method is responsible for rendering a nonlinear ad
+* This method is responsible for rendering a companion ad
 */
 export function playCompanionAd(creative) {
-  creative.variations.map((variation) => {
+  creative.variations.forEach((variation) => {
     this.companionVastTracker.trackImpression(this.macros);
+
+    const clickHandler = () => {
+      window.open(variation.companionClickThroughURLTemplate, '_blank');
+      this.companionVastTracker.click(null, this.macros);
+    };
 
     // image
     if (variation.staticResources && variation.staticResources.length > 0) {
-      variation.staticResources.map((staticResource) => {
-        const ressourceContainer = document.createElement('div');
-        this.domElements.push(ressourceContainer);
-        ressourceContainer.width = variation.staticResources.width > 0 ? variation.staticResources.width : 100;
-        ressourceContainer.height = variation.staticResources.height > 0 ? variation.staticResources.height : 100;
-        ressourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
-        ressourceContainer.style.maxHeight = variation.staticResources.expandedHeight;
-        applyNonLinearCommonDomStyle(ressourceContainer);
+      variation.staticResources.forEach((staticResource) => {
+        const resourceContainer = document.createElement('div');
+        this.domElements.push(resourceContainer);
+        const { width, height } = variation.staticResources;
+        resourceContainer.width = width > 0 ? width : 100;
+        resourceContainer.height = height > 0 ? height : 100;
+        resourceContainer.style.maxWidth = variation.staticResources.expandedWidth;
+        resourceContainer.style.maxHeight = variation.staticResources.expandedHeight;
+        applyNonLinearCommonDomStyle(resourceContainer);
 
-        const ressource = document.createElement('img');
-        this.domElements.push(ressourceContainer);
-        ressource.addEventListener('click', () => {
-          window.open(variation.companionClickThroughURLTemplate, '_blank');
-          this.companionVastTracker.click(null, this.macros);
-        });
-        ressource.src = staticResource.url;
-        ressourceContainer.appendChild(ressource);
-        if (variation.adSlotID) {
-          document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
-        } else {
-          this.player.el().appendChild(ressourceContainer);
-        }
-        return staticResource;
+        const resource = document.createElement('img');
+        resource.addEventListener('click', clickHandler);
+        resource.src = staticResource.url;
+        resourceContainer.appendChild(resource);
+        appendToSlotOrPlayer(resourceContainer, variation.adSlotID, this.player.el());
       });
     }
 
     // html
     if (variation.htmlResources) {
-      variation.htmlResources.map((htmlResource) => {
-        const ressourceContainer = document.createElement('div');
-        this.domElements.push(ressourceContainer);
-        ressourceContainer.width = variation.htmlResources.width;
-        ressourceContainer.height = variation.htmlResources.height;
-        ressourceContainer.style.maxWidth = variation.htmlResources.expandedWidth;
-        ressourceContainer.style.maxHeight = variation.htmlResources.expandedHeight;
-        applyNonLinearCommonDomStyle(ressourceContainer);
-        ressourceContainer.addEventListener('click', () => {
-          window.open(variation.companionClickThroughURLTemplate, '_blank');
-          this.companionVastTracker.click(null, this.macros);
-        });
-        ressourceContainer.innerHTML = htmlResource;
-        if (variation.adSlotID) {
-          document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
-        } else {
-          this.player.el().appendChild(ressourceContainer);
-        }
-        return htmlResource;
+      variation.htmlResources.forEach((htmlResource) => {
+        const resourceContainer = document.createElement('div');
+        this.domElements.push(resourceContainer);
+        resourceContainer.width = variation.htmlResources.width;
+        resourceContainer.height = variation.htmlResources.height;
+        resourceContainer.style.maxWidth = variation.htmlResources.expandedWidth;
+        resourceContainer.style.maxHeight = variation.htmlResources.expandedHeight;
+        applyNonLinearCommonDomStyle(resourceContainer);
+        resourceContainer.addEventListener('click', clickHandler);
+        resourceContainer.innerHTML = sanitizeHtml(htmlResource);
+        appendToSlotOrPlayer(resourceContainer, variation.adSlotID, this.player.el());
       });
     }
 
     // iframe
     if (variation.iframeResources) {
-      variation.iframeResources.map((iframeResource) => {
-        const ressourceContainer = document.createElement('div');
-        this.domElements.push(ressourceContainer);
-        ressourceContainer.width = variation.iframeResources.width;
-        ressourceContainer.height = variation.iframeResources.height;
-        ressourceContainer.style.maxWidth = variation.iframeResources.expandedWidth;
-        ressourceContainer.style.maxHeight = variation.iframeResources.expandedHeight;
-        applyNonLinearCommonDomStyle(ressourceContainer);
-        ressourceContainer.addEventListener('click', () => {
-          window.open(variation.companionClickThroughURLTemplate, '_blank');
-          this.companionVastTracker.click(null, this.macros);
-        });
-        ressourceContainer.src = iframeResource;
-        if (variation.adSlotID) {
-          document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
-        } else {
-          this.player.el().appendChild(ressourceContainer);
-        }
-        return iframeResource;
+      variation.iframeResources.forEach((iframeResource) => {
+        const resourceContainer = document.createElement('div');
+        this.domElements.push(resourceContainer);
+        resourceContainer.width = variation.iframeResources.width;
+        resourceContainer.height = variation.iframeResources.height;
+        resourceContainer.style.maxWidth = variation.iframeResources.expandedWidth;
+        resourceContainer.style.maxHeight = variation.iframeResources.expandedHeight;
+        applyNonLinearCommonDomStyle(resourceContainer);
+        resourceContainer.addEventListener('click', clickHandler);
+        resourceContainer.src = iframeResource;
+        appendToSlotOrPlayer(resourceContainer, variation.adSlotID, this.player.el());
       });
     }
-    return variation;
   });
 }

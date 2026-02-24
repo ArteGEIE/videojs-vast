@@ -2,6 +2,7 @@ import videojs from 'video.js';
 import 'videojs-contrib-ads';
 import { VASTClient, VASTTracker, VASTParser } from '@dailymotion/vast-client';
 import { addIcons } from './features/icons';
+import { addEventsListeners, removeEventsListeners, cleanupReadAdListeners } from './features/eventManager';
 import { playLinearAd } from './modes/linear';
 import { playCompanionAd } from './modes/companions';
 import { playNonLinearAd } from './modes/nonlinear';
@@ -243,18 +244,21 @@ class Vast extends Plugin {
       this.player.ads.skipLinearAdMode();
     }
     if (currentAd.hasNonlinearCreative()) {
-      // TODO: remove those listeners
-      this.player.one(currentAd.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+      this.cleanupReadAdListeners();
+      const nonlinearEvent = currentAd.hasLinearCreative() ? 'adplaying' : 'playing';
+      this.onNonLinearReady = () => {
         this.nonLinearVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.nonlinearCreative(), 'NonLinearAd');
         this.playNonLinearAd(currentAd.nonlinearCreative());
-      });
+      };
+      this.player.one(nonlinearEvent, this.onNonLinearReady);
     }
     if (currentAd.hasCompanionCreative()) {
-      // TODO: remove those listeners
-      this.player.one(currentAd.hasLinearCreative() ? 'adplaying' : 'playing', () => {
+      const companionEvent = currentAd.hasLinearCreative() ? 'adplaying' : 'playing';
+      this.onCompanionReady = () => {
         this.companionVastTracker = new VASTTracker(this.vastClient, currentAd.ad, currentAd.companionCreative(), 'CompanionAd');
         this.playCompanionAd(currentAd.companionCreative());
-      });
+      };
+      this.player.one(companionEvent, this.onCompanionReady);
     }
   }
 
@@ -269,20 +273,22 @@ class Vast extends Plugin {
       return null;
     }
     const nextAd = this.adsArray.shift();
+    const linear = nextAd.creatives.find((c) => c.type === 'linear');
+    const companion = nextAd.creatives.find((c) => c.type === 'companion');
+    const nonlinear = nextAd.creatives.find((c) => c.type === 'nonlinear');
+
+    const hasValidLinear = linear
+      && linear.mediaFiles.length > 0
+      && linear.mediaFiles.some((mf) => mf.fileURL !== '');
+
     return {
       ad: nextAd,
-      hasLinearCreative: () => {
-        // find linear content
-        const linear = nextAd.creatives.find((creative) => creative.type === 'linear') !== undefined && nextAd.creatives.filter((creative) => creative.type === 'linear')[0];
-        // check if at least one mediaFile is provided
-        const hasMediaFile = linear.mediaFiles.length > 0 && linear.mediaFiles.some((mediaFile) => mediaFile.fileURL !== '');
-        return linear && hasMediaFile;
-      },
-      linearCreative: () => nextAd.creatives.filter((creative) => creative.type === 'linear')[0],
-      hasCompanionCreative: () => nextAd.creatives.find((creative) => creative.type === 'companion') !== undefined,
-      companionCreative: () => nextAd.creatives.filter((creative) => creative.type === 'companion')[0],
-      hasNonlinearCreative: () => nextAd.creatives.find((creative) => creative.type === 'nonlinear') !== undefined,
-      nonlinearCreative: () => nextAd.creatives.filter((creative) => creative.type === 'nonlinear')[0],
+      hasLinearCreative: () => !!hasValidLinear,
+      linearCreative: () => linear,
+      hasCompanionCreative: () => !!companion,
+      companionCreative: () => companion,
+      hasNonlinearCreative: () => !!nonlinear,
+      nonlinearCreative: () => nonlinear,
     };
   }
 
@@ -290,9 +296,9 @@ class Vast extends Plugin {
     this.debug('adplay');
     // don't track the very first play to avoid sending resume tracker event
     if (parseInt(this.player.currentTime(), 10) > 0) {
-      this.linearVastTracker.setPaused(false, {
+      this.linearVastTracker?.setPaused(false, {
         ...this.macros,
-        ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+        ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
       });
     }
   };
@@ -301,9 +307,9 @@ class Vast extends Plugin {
     this.debug('adpause');
     // don't track the pause event triggered before complete
     if (this.player.duration() - this.player.currentTime() > 0.2) {
-      this.linearVastTracker.setPaused(true, {
+      this.linearVastTracker?.setPaused(true, {
         ...this.macros,
-        ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+        ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
       });
     }
   };
@@ -311,7 +317,7 @@ class Vast extends Plugin {
   // Track timeupdate-related events
   onAdTimeUpdate = () => {
     // Set progress to track automated trackign events
-    this.linearVastTracker.setProgress(this.player.currentTime(), this.macros);
+    this.linearVastTracker?.setProgress(this.player.currentTime(), this.macros);
     this.player.trigger('vast.time', { position: this.player.currentTime(), currentTime: this.player.currentTime(), duration: this.player.duration() });
   };
 
@@ -340,30 +346,27 @@ class Vast extends Plugin {
   onAdVolumeChange = () => {
     this.debug('volume');
     if (!this.linearVastTracker) {
-      return false;
+      return;
     }
     // Track the user muting or unmuting the video
     this.linearVastTracker.setMuted(this.player.muted(), {
       ...this.macros,
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
-    return true;
   };
 
   onAdFullScreen = (evt, data) => {
     this.debug('fullscreen');
     if (!this.linearVastTracker) {
-      return false;
+      return;
     }
-    // Track skip event
     this.linearVastTracker.setFullscreen(data.state);
-    return true;
   };
 
   // Track when user closes the video
   onUnload = () => {
     if (!this.linearVastTracker) {
-      return false;
+      return;
     }
 
     this.linearVastTracker.close({
@@ -371,7 +374,6 @@ class Vast extends Plugin {
       ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
     });
     this.removeEventsListeners();
-    return null;
   };
 
   // Notify the player if we reach a timeout while trying to load the ad
@@ -397,22 +399,22 @@ class Vast extends Plugin {
     // Trigger an event to notify the player consumer that the ad is playing
     this.player.trigger('vast.play', {
       ctaUrl: this.ctaUrl,
-      skipDelay: this.linearVastTracker.skipDelay,
-      adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : false,
+      skipDelay: this.linearVastTracker?.skipDelay,
+      adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : null,
       duration: this.player.duration(),
     });
     // Track the impression of an ad
-    this.linearVastTracker.load({
+    this.linearVastTracker?.load({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
 
-    this.linearVastTracker.trackImpression({
+    this.linearVastTracker?.trackImpression({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
-    this.linearVastTracker.overlayViewDuration(
-      this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+    this.linearVastTracker?.overlayViewDuration(
+      this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
       this.macros,
     );
 
@@ -484,9 +486,9 @@ class Vast extends Plugin {
 
   onAdError = (evt) => {
     this.debug('aderror');
-    // const error = this.player.error();
+    this.clearSkipInterval();
     // trigger a tracker error
-    this.linearVastTracker.error({
+    this.linearVastTracker?.error({
       ...this.macros,
       ERRORCODE: 900, // undefined error, to be improved
     });
@@ -533,9 +535,9 @@ class Vast extends Plugin {
     this.player.trigger('vast.skip');
 
     // Track skip event
-    this.linearVastTracker.skip({
+    this.linearVastTracker?.skip({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
 
     // delete ctadiv, skip btn, icons, companions or nonlinear elements
@@ -557,9 +559,9 @@ class Vast extends Plugin {
     this.debug('adended');
 
     // Track the end of an ad
-    this.linearVastTracker.complete({
+    this.linearVastTracker?.complete({
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
 
     // delete ctadiv, skip btn, icons, companions or nonlinear elements
@@ -589,48 +591,6 @@ class Vast extends Plugin {
     }
   }
 
-  addEventsListeners() {
-    // ad events
-    this.player.one('adplaying', this.onFirstPlay);
-    this.player.on('adplaying', this.onAdPlay);
-    this.player.on('adpause', this.onAdPause);
-    this.player.on('adtimeupdate', this.onAdTimeUpdate);
-    this.player.on('advolumechange', this.onAdVolumeChange);
-    this.player.on('adfullscreen', this.onAdFullScreen);
-    this.player.on('adtimeout', this.onAdTimeout);
-    this.player.on('adstart', this.onAdStart);
-    this.player.on('aderror', this.onAdError);
-    this.player.on('readyforpreroll', this.onReadyForPreroll);
-    this.player.on('readyforpostroll', this.onReadyForPostroll);
-    this.player.on('skip', this.onSkip);
-    this.player.on('adended', this.onAdEnded);
-    this.player.on('ended', this.onEnded);
-    this.player.on('dispose', this.onDispose);
-    window.addEventListener('beforeunload', this.onUnload);
-  }
-
-  removeEventsListeners() {
-    this.debug('removeEventsListeners');
-    this.player.off('adplaying', this.onAdPlay);
-    this.player.off('adplaying', this.onFirstPlay);
-    this.player.off('adpause', this.onAdPause);
-    this.player.off('adtimeupdate', this.onAdTimeUpdate);
-    this.player.off('advolumechange', this.onAdVolumeChange);
-    this.player.off('adfullscreen', this.onAdFullScreen);
-    this.player.off('adtimeout', this.onAdTimeout);
-    this.player.off('adstart', this.onAdStart);
-    this.player.off('aderror', this.onAdError);
-    // added only if some midrolls have been found, remove by security
-    this.player.off('timeupdate', this.onProgress);
-    this.player.off('readyforpreroll', this.onReadyForPreroll);
-    this.player.off('readyforpostroll', this.onReadyForPostroll);
-    this.player.off('skip', this.onSkip);
-    this.player.off('adended', this.onAdEnded);
-    this.player.off('ended', this.onEnded);
-    this.player.off('dispose', this.onDispose);
-    window.removeEventListener('beforeunload', this.onUnload);
-  }
-
   /*
   * This method is responsible for dealing with the click on the ad
   */
@@ -638,9 +598,9 @@ class Vast extends Plugin {
     this.player.trigger('vast.click');
     window.open(ctaUrl, '_blank');
     // Track when a user clicks on an ad
-    this.linearVastTracker.click(null, {
+    this.linearVastTracker?.click(null, {
       ...this.macros,
-      ADPLAYHEAD: this.linearVastTracker.convertToTimecode(this.player.currentTime()),
+      ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
     });
   };
 
@@ -663,7 +623,7 @@ class Vast extends Plugin {
 
   async handleVMAP(vmapUrl) {
     try {
-      const vmap = await fetchVmapUrl(vmapUrl);
+      const vmap = await fetchVmapUrl(vmapUrl, this.options.timeout);
       if (vmap.adBreaks && vmap.adBreaks.length > 0) {
         this.addEventsListeners();
         // handle preroll
@@ -732,6 +692,9 @@ Vast.prototype.playLinearAd = playLinearAd;
 Vast.prototype.playNonLinearAd = playNonLinearAd;
 Vast.prototype.playCompanionAd = playCompanionAd;
 Vast.prototype.addIcons = addIcons;
+Vast.prototype.addEventsListeners = addEventsListeners;
+Vast.prototype.removeEventsListeners = removeEventsListeners;
+Vast.prototype.cleanupReadAdListeners = cleanupReadAdListeners;
 
 export default Vast;
 
