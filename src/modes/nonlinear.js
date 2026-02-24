@@ -9,85 +9,85 @@ export function playNonLinearAd(creative) {
 
     // image
     if (variation.staticResource) {
-      const ressourceContainer = document.createElement('div');
-      this.domElements.push(ressourceContainer);
-      applyNonLinearCommonDomStyle(ressourceContainer);
+      const resourceContainer = document.createElement('div');
+      this.domElements.push(resourceContainer);
+      applyNonLinearCommonDomStyle(resourceContainer);
 
-      const ressource = document.createElement('img');
-      ressource.addEventListener('click', () => {
+      const resource = document.createElement('img');
+      resource.addEventListener('click', () => {
         window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
         this.nonLinearVastTracker.click(null, this.macros);
       });
-      ressourceContainer.style.maxWidth = variation.expandedWidth;
-      ressourceContainer.style.maxHeight = variation.expandedHeight;
-      ressource.src = variation.staticResource;
+      resourceContainer.style.maxWidth = variation.expandedWidth;
+      resourceContainer.style.maxHeight = variation.expandedHeight;
+      resource.src = variation.staticResource;
 
       // add close button
-      const closeButton = getCloseButton(() => ressourceContainer.remove());
+      const closeButton = getCloseButton(() => resourceContainer.remove());
       closeButton.style.display = variation.minSuggestedDuration ? 'none' : 'block';
 
       if (variation.minSuggestedDuration) {
         setTimeout(() => {
           closeButton.style.display = 'block';
-          ressourceContainer.appendChild(closeButton);
+          resourceContainer.appendChild(closeButton);
         }, variation.minSuggestedDuration * 1000);
       }
-      ressourceContainer.appendChild(ressource);
+      resourceContainer.appendChild(resource);
       if (variation.adSlotID) {
-        document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
+        document.querySelector(`#${variation.adSlotID}`).appendChild(resourceContainer);
       } else {
-        this.player.el().appendChild(ressourceContainer);
+        this.player.el().appendChild(resourceContainer);
       }
     }
 
     // html
     if (variation.htmlResource) {
-      const ressourceContainer = document.createElement('div');
-      this.domElements.push(ressourceContainer);
-      applyNonLinearCommonDomStyle(ressourceContainer);
-      ressourceContainer.addEventListener('click', () => {
+      const resourceContainer = document.createElement('div');
+      this.domElements.push(resourceContainer);
+      applyNonLinearCommonDomStyle(resourceContainer);
+      resourceContainer.addEventListener('click', () => {
         window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
         this.nonLinearVastTracker.click(null, this.macros);
       });
 
-      ressourceContainer.style.maxWidth = variation.expandedWidth;
-      ressourceContainer.style.maxHeight = variation.expandedHeight;
-      ressourceContainer.innerHTML = variation.htmlResource;
+      resourceContainer.style.maxWidth = variation.expandedWidth;
+      resourceContainer.style.maxHeight = variation.expandedHeight;
+      resourceContainer.innerHTML = variation.htmlResource;
 
       if (variation.adSlotID) {
-        document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
+        document.querySelector(`#${variation.adSlotID}`).appendChild(resourceContainer);
       } else {
-        this.player.el().appendChild(ressourceContainer);
+        this.player.el().appendChild(resourceContainer);
       }
       if (variation.minSuggestedDuration) {
         setTimeout(() => {
-          ressourceContainer.remove();
+          resourceContainer.remove();
         }, variation.minSuggestedDuration * 1000);
       }
     }
 
     // iframe
     if (variation.iframeResource) {
-      const ressourceContainer = document.createElement('iframe');
-      this.domElements.push(ressourceContainer);
-      applyNonLinearCommonDomStyle(ressourceContainer);
-      ressourceContainer.addEventListener('click', () => {
+      const resourceContainer = document.createElement('iframe');
+      this.domElements.push(resourceContainer);
+      applyNonLinearCommonDomStyle(resourceContainer);
+      resourceContainer.addEventListener('click', () => {
         window.open(variation.nonlinearClickThroughURLTemplate, '_blank');
         this.nonLinearVastTracker.click(null, this.macros);
       });
 
-      ressourceContainer.style.maxWidth = variation.expandedWidth;
-      ressourceContainer.style.maxHeight = variation.expandedHeight;
+      resourceContainer.style.maxWidth = variation.expandedWidth;
+      resourceContainer.style.maxHeight = variation.expandedHeight;
 
-      ressourceContainer.src = variation.iframeResource;
+      resourceContainer.src = variation.iframeResource;
       if (variation.adSlotID) {
-        document.querySelector(`#${variation.adSlotID}`).appendChild(ressourceContainer);
+        document.querySelector(`#${variation.adSlotID}`).appendChild(resourceContainer);
       } else {
-        this.player.el().appendChild(ressourceContainer);
+        this.player.el().appendChild(resourceContainer);
       }
       if (variation.minSuggestedDuration) {
         setTimeout(() => {
-          ressourceContainer.remove();
+          resourceContainer.remove();
         }, variation.minSuggestedDuration * 1000);
       }
     }
