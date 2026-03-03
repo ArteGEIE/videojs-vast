@@ -32,3 +32,5 @@ build/
 node_modules
 cypress/screenshots/*
 CLAUDE.md
+docs/demo.js
+docs/demo.js.map
