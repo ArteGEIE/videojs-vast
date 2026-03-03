@@ -1,5 +1,5 @@
 {
-  "name": "@artegie/videojs-vast",
+  "name": "@artegeie/videojs-vast",
   "version": "1.5.4",
   "main": "./dist/cjs/index.js",
   "module": "./dist/mjs/index.js",

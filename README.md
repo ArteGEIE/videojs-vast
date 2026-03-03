@@ -30,17 +30,17 @@ Table of contents
 
 In order to start using the VAST Plugin you are supposed to have started a project that consumes VideosJS and have some basic knowledge of its basic concepts and API. To get started, install and include this package in your project's dependencies using npm or yarn:
 
-First, configure your `.npmrc` to use GitHub Packages for the `@artegie` scope:
+First, configure your `.npmrc` to use GitHub Packages for the `@artegeie` scope:
 
 ```
-@artegie:registry=https://npm.pkg.github.com
+@artegeie:registry=https://npm.pkg.github.com
 ```
 
 Then install the package:
 
 ```
-npm install --save @artegie/videojs-vast
-yarn add @artegie/videojs-vast
+npm install --save @artegeie/videojs-vast
+yarn add @artegeie/videojs-vast
 ```
 
 Now, import the plugin package and initialize it right after initializing your VideoJS instance. Here's a small snipet that of what it could look like:
@@ -48,7 +48,7 @@ Now, import the plugin package and initialize it right after initializing your V
 ```
 // Import the necessary packages
 import videojs from 'video.js';
-import '@artegie/videojs-vast';
+import '@artegeie/videojs-vast';
 
 // Create VideoJS instance
 const videoJsInstance = videojs('my-player', {
@@ -145,7 +145,7 @@ If you prefer using [**yalc**](https://www.npmjs.com/package/yalc) to test the p
 
 * Install Yalc globally with ```npm i yalc -g```
 * Run ```npm run build:local``` to build and push to the local yalc registry
-* In your project, run ```yalc add @artegie/videojs-vast```
+* In your project, run ```yalc add @artegeie/videojs-vast```
 
 #### Testing
 

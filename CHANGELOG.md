@@ -2,7 +2,7 @@
 
 ### Changed
 
-- **VAST-73:** Migrate package from NPM to GitHub Packages (`@artegie/videojs-vast`)
+- **VAST-73:** Migrate package from NPM to GitHub Packages (`@artegeie/videojs-vast`)
 - Add GitHub Actions workflow for automated publishing on tag push
 
 ## [1.5.4](https://github.com/ArteGEIE/videojs-vast/compare/1.5.3...1.5.4) (2026-02-06)
