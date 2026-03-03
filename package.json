@@ -58,7 +58,7 @@
     "eslint-plugin-import": "^2.27.5",
     "regenerator-runtime": "^0.14.1",
     "semver": "^7.5.0",
-    "serve": "^14.2.0",
+    "serve": "^14.2.5",
     "video.js": "^8.3.0",
     "vitest": "^4.0.18",
     "wait-on": "^9.0.4",
