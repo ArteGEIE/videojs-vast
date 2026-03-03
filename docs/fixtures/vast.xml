@@ -32,14 +32,14 @@
        <ClickThrough id="GDFP"><![CDATA[https://pubads.g.doubleclick.net/pcs/click?xai=AKAOjsuIbacy46apcJT1jDZ6i-51ZEXLcINBPr3-OjUQY9e6v5uCKf-yVm9eNThr36JWH2mIaVr2akMCkkBvnVsjUyKyaTWAR5SZZVCrJd4Xtpt8mFsJYWBiHBi0lu3rg6_k-fxvPNZFaANhsA7OCBQr6X34BIC5O2qskVfyqC457BywbsClnowc65NpxROm-ctv0Ocz9udW1-dXAhYQ5HBvPIbmMgl1SJzDLWgn2D3ZXbSBV7k8aZQGKz-GKb2bP8Lpl2yIDnpozGXj4_heOwbqDuIjvnM-twkOq8_yN-E8ORcBDfXQvb1JiwYO3qIKtGGgnGoMWm6cNH_gkafXrvyUbdXHXg&sai=AMfl-YSJhBbRGQuHcx6wneZOxG0HiBha2WMq-xIMSe_omOHFA23p_1HblbC-HS7x54MmwC_K2QgtTQ81CDVfRejIbA&sig=Cg0ArKJSzFKfLvRGBxC1&fbs_aeid=[gw_fbsaeid]&adurl=https://developers.google.com/interactive-media-ads/docs/vastinspector_dual]]></ClickThrough>
       </VideoClicks>
       <MediaFiles>
-       <MediaFile id="GDFP" delivery="progressive" width="1280" height="720" type="video/mp4" bitrate="398" scalable="true" maintainAspectRatio="true"><![CDATA[https://www.arte.tv/static/artevpv7/vast/preroll.mp4]]></MediaFile>
+       <MediaFile id="GDFP" delivery="progressive" width="1280" height="720" type="video/mp4" bitrate="398" scalable="true" maintainAspectRatio="true"><![CDATA[fixtures/preroll.mp4]]></MediaFile>
       </MediaFiles>
      </Linear>
     </Creative>
     <Creative id="57857370976" sequence="1">
      <CompanionAds>
       <Companion id="57857370976" width="300" height="250">
-       <StaticResource creativeType="image/png"><![CDATA[https://pagead2.googlesyndication.com/simgad/14568666361913360151]]></StaticResource>
+       <StaticResource creativeType="image/png"><![CDATA[fixtures/companion-300x250-alt.png]]></StaticResource>
        <TrackingEvents>
         <Tracking event="creativeView"><![CDATA[https://securepubads.g.doubleclick.net/pcs/view?xai=AKAOjsvkhC02LdUQDa_J5a76FKsD7mg3AQ498tUsnbjZwZYOjIs9lY5y9Z5yKZXlQs16totENL5c9kaNJMeQIU7WoQzie6sbIefd8yWTU110lW4xo9v-f40N7z10ccAvo4o_Sr1xB3FWbakydb_xWf01kvq_MLukKuOuYCqVKGtYEXFinDz2mYM_KwejXOD77NUA4vr4J-z6g5AUosfbo2HR3Z0ndkBs6yPGR--z7GlvIw9psvrQ0-HQ4BnYlGm4ZhVlWgxPH743E08DW_PsfdgjCTkS_0BG8AN_mDCw-97hAoaSJwMM7iuIVVL6zwXvGJ7WFw6qJHh6A4A2TuY_GVf_YvSvN7pUJA&sai=AMfl-YTrwqGHG5rs0499AZxcF11TCRFxjj4OjIRe2Re7OfKSnh11MHkKo37HQIdPhR2Eg3sMp1J3yE_nPofu--cVLw&sig=Cg0ArKJSzB08tIqQxhimEAE&uach_m=[UACH]&adurl=]]></Tracking>
        </TrackingEvents>

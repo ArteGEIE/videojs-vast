@@ -5,7 +5,7 @@ const cacheKiller = Date.now();
 
 describe('Linear Test : Inline', () => {
   it('Player should play the ad', () => {
-    const vastUrl = `/fixtures/Inline_Simple.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/Inline_Simple.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/Inline_Simple.xml*').as('vastFile');
     cy.visit(`/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').its('response.statusCode').should('be.oneOf', [200, 304]);
@@ -20,7 +20,7 @@ describe('Linear Test : Inline', () => {
 
 describe('Linear Test : Wrapper', () => {
   it('Wrapper resolves to inline creative', () => {
-    const vastUrl = `/fixtures/Wrapper_Tag-test.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/Wrapper_Tag-test.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/Wrapper_Tag-test.xml*').as('wrapperFile');
     cy.intercept('GET', '**/Inline_Companion_Tag-test.xml*').as('inlineFile');
     cy.visit(`/?vastUrl=${encodeURIComponent(vastUrl)}`);
@@ -36,7 +36,7 @@ describe('Linear Test : Wrapper', () => {
 
 describe('Linear : skip', () => {
   it('Skip button appears and skips the ad', () => {
-    const vastUrl = `/fixtures/vast_skip.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/vast_skip.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/vast_skip.xml*').as('vastFile');
     cy.visit(`/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile');
@@ -52,7 +52,7 @@ describe('Linear : skip', () => {
 
 describe('Linear : icon', () => {
   it('Icon has been added', () => {
-    const vastUrl = `/fixtures/IconClickFallbacks.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/IconClickFallbacks.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/IconClickFallbacks.xml*').as('vastFile');
     cy.visit(`/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile');
@@ -63,7 +63,7 @@ describe('Linear : icon', () => {
 
 describe('Linear Test : companions', () => {
   it('Player should display companion images', () => {
-    const vastUrl = `/fixtures/Inline_Companion_Tag-test.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/Inline_Companion_Tag-test.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/Inline_Companion_Tag-test.xml*').as('vastFile');
     cy.visit(`/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').its('response.statusCode').should('be.oneOf', [200, 304]);
@@ -75,7 +75,7 @@ describe('Linear Test : companions', () => {
 
 describe('Linear Test : adPods', () => {
   it('Player should play all ads of adpods', () => {
-    const vastUrl = `/fixtures/wrapper-ad-pod.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/wrapper-ad-pod.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/wrapper-ad-pod.xml*').as('vastFile');
     cy.intercept('GET', '**/inline-linear.xml*').as('inlineVast');
     cy.visit(`/?vastUrl=${encodeURIComponent(vastUrl)}`);
@@ -92,7 +92,7 @@ describe('Linear Test : adPods', () => {
 
 describe('Linear Test : empty VAST', () => {
   it('Player should play normal video with no ad', () => {
-    const vastUrl = `/fixtures/empty-no-ad.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/empty-no-ad.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/empty-no-ad.xml*').as('vastFile');
     cy.visit(`/?vastUrl=${encodeURIComponent(vastUrl)}`);
     cy.wait('@vastFile').its('response.statusCode').should('be.oneOf', [200, 304]);
@@ -110,7 +110,7 @@ describe('Linear Test : empty VAST', () => {
 
 describe('Linear Test : Impression tracking', () => {
   it('All quartile tracking events are fired during ad playback', () => {
-    const vastUrl = `/fixtures/Inline_Simple.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/Inline_Simple.xml?cacheKiller=${cacheKiller}`;
     const firedEvents = [];
 
     cy.intercept('GET', '**/Inline_Simple.xml*').as('vastFile');
@@ -164,7 +164,7 @@ describe('Linear Test : Impression tracking', () => {
 
 describe('Linear Test : verification', () => {
   it('Verification scripts are loaded', () => {
-    const vastUrl = `/fixtures/Ad_Verification-test.xml?cacheKiller=${cacheKiller}`;
+    const vastUrl = `fixtures/Ad_Verification-test.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/Ad_Verification-test.xml*').as('vastFile');
     cy.intercept('GET', '**/verification.js').as('verificationScript1');
     cy.intercept('GET', '**/verification2.js').as('verificationScript2');
@@ -178,7 +178,7 @@ describe('Linear Test : verification', () => {
 
 describe('VMAP : full (AdTagURI)', () => {
   it('Preroll ad plays from VMAP schedule', () => {
-    const vmapUrl = `/fixtures/vmap.xml?cacheKiller=${cacheKiller}`;
+    const vmapUrl = `fixtures/vmap.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/vmap.xml*').as('vmapFile');
     cy.intercept('GET', '**/vast.xml*').as('vastFile');
     cy.visit(`/?vmapUrl=${encodeURIComponent(vmapUrl)}`);
@@ -196,7 +196,7 @@ describe('VMAP : full (AdTagURI)', () => {
 
 describe('VMAP : inline (VASTAdData)', () => {
   it('Preroll ad plays from inline VMAP data', () => {
-    const vmapUrl = `/fixtures/vmap-inline.xml?cacheKiller=${cacheKiller}`;
+    const vmapUrl = `fixtures/vmap-inline.xml?cacheKiller=${cacheKiller}`;
     cy.intercept('GET', '**/vmap-inline.xml*').as('vmapFile');
     // Inline VMAP wraps vast.xml via VASTAdTagURI inside VASTAdData
     cy.intercept('GET', '**/vast.xml*').as('vastFile');
