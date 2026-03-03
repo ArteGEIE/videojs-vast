@@ -1,4 +1,4 @@
-## [Unreleased]
+## [1.6.0](https://github.com/ArteGEIE/videojs-vast/compare/1.5.4...v1.6.0) (2026-03-03)
 
 ### Changed
 
