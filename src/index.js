@@ -399,6 +399,8 @@ class Vast extends Plugin {
       skipDelay: this.linearVastTracker?.skipDelay,
       adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : null,
       duration: this.player.duration(),
+      // preroll media URL, consumed by arteVp SST for the AD_STARTED event (PLAYER-3664)
+      streamUrl: this.currentAdStreamUrl,
     });
     // Track the impression of an ad
     this.linearVastTracker?.load({

@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/ArteGEIE/videojs-vast/compare/v1.6.0...v1.7.0) (2026-06-11)
+
+### Changed
+
+- **PLAYER-3664:** Forward the preroll media URL (`streamUrl`) in the `vast.play` event payload, consumed by arteVp SST for the `AD_STARTED` event
+
 ## [1.6.0](https://github.com/ArteGEIE/videojs-vast/compare/1.5.4...v1.6.0) (2026-03-03)
 
 ### Changed

@@ -7,6 +7,9 @@ export function playLinearAd(creative) {
   // Retrieve the media file from the VAST manifest
   const mediaFile = getBestMediaFile(creative.mediaFiles);
 
+  // store the preroll URL before startLinearAdMode (which triggers adstart synchronously)
+  this.currentAdStreamUrl = mediaFile.fileURL;
+
   // Start ad mode
   if (!this.player.ads.inAdBreak()) {
     this.player.ads.startLinearAdMode();
