@@ -290,15 +290,39 @@ class Vast extends Plugin {
   }
 
   onAdPlay = () => {
+    this.handleAdPlay();
+  };
+
+  // Extracted as a prototype method so it can be unit-tested without a full plugin instance.
+  // currentTime > 0 is a resume after pause; currentTime ~0 is the real start of the ad,
+  // where we notify the consumer (AD_STARTED) and remove the loading spinner.
+  handleAdPlay() {
     this.debug('adplay');
-    // don't track the very first play to avoid sending resume tracker event
     if (parseInt(this.player.currentTime(), 10) > 0) {
+      // resume after pause, don't re-notify the ad start
       this.linearVastTracker?.setPaused(false, {
         ...this.macros,
         ADPLAYHEAD: this.linearVastTracker?.convertToTimecode(this.player.currentTime()),
       });
+    } else {
+      this.notifyAdStarted();
     }
-  };
+  }
+
+  // Notify the player consumer that the ad actually started playing.
+  // Bound to real playback (adplaying) rather than ad-mode entry (adstart) so the event
+  // fires at the true ad start even when the browser blocks autoplay (Firefox).
+  // Consumed by arteVp SST for the AD_STARTED event (PLAYER-3664) and to remove the spinner.
+  notifyAdStarted() {
+    this.player.trigger('vast.play', {
+      ctaUrl: this.ctaUrl,
+      skipDelay: this.linearVastTracker?.skipDelay,
+      adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : null,
+      duration: this.player.duration(),
+      // preroll media URL, consumed by arteVp SST for the AD_STARTED event (PLAYER-3664)
+      streamUrl: this.currentAdStreamUrl,
+    });
+  }
 
   onAdPause = () => {
     this.debug('adpause');
@@ -390,18 +414,11 @@ class Vast extends Plugin {
     this.removeEventsListeners();
   };
 
-  // send event when ad is playing to remove loading spinner
+  // 'adstart' fires when the player enters ad mode (preparation), which can happen
+  // long before playback when autoplay is blocked (Firefox). The consumer-facing
+  // vast.play notification is emitted from onAdPlay instead, on the real ad start.
   onAdStart = () => {
     this.debug('adstart');
-    // Trigger an event to notify the player consumer that the ad is playing
-    this.player.trigger('vast.play', {
-      ctaUrl: this.ctaUrl,
-      skipDelay: this.linearVastTracker?.skipDelay,
-      adClickCallback: this.ctaUrl ? () => this.adClickCallback(this.ctaUrl) : null,
-      duration: this.player.duration(),
-      // preroll media URL, consumed by arteVp SST for the AD_STARTED event (PLAYER-3664)
-      streamUrl: this.currentAdStreamUrl,
-    });
     // Track the impression of an ad
     this.linearVastTracker?.load({
       ...this.macros,
