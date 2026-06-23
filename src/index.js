@@ -76,12 +76,11 @@ class Vast extends Plugin {
     } else {
       this.disablePostroll();
       this.addEventsListeners();
-      this.handleVAST(options.vastUrl, () => {
-        this.disablePreroll();
-      }).then(() => {
-        if (this.adsArray.length > 0) {
-          this.player.trigger('adsready');
-        }
+      this.handleVAST(options.vastUrl).then(() => {
+        // Always signal contrib-ads that the ad system is ready. The preroll decision
+        // (play an ad vs. skip to content) is made on 'readyforpreroll', which fires
+        // after playback starts — so it is robust to the VAST resolving before play.
+        this.player.trigger('adsready');
       });
     }
   }
@@ -123,7 +122,7 @@ class Vast extends Plugin {
     }
   }
 
-  async handleVAST(vastUrl, onError = null) {
+  async handleVAST(vastUrl) {
     // Now let's fetch some adsonp
     this.vastClient = new VASTClient();
     try {
@@ -133,21 +132,16 @@ class Vast extends Plugin {
       });
       this.adsArray = response.ads ?? [];
       if (this.adsArray.length === 0) {
-        onError?.();
-        // Deal with the error
-        const message = 'VastVjs: Empty VAST XML';
+        // No ad: contrib-ads is told to skip the preroll on 'readyforpreroll'
         this.player.trigger('vast.error', {
-          message,
+          message: 'VastVjs: Empty VAST XML',
           tag: vastUrl,
         });
       }
     } catch (err) {
       console.error(err);
-      onError?.();
-      // Deal with the error
-      const message = 'VastVjs: Error while fetching VAST XML';
       this.player.trigger('vast.error', {
-        message,
+        message: 'VastVjs: Error while fetching VAST XML',
         tag: vastUrl,
       });
     }
@@ -525,7 +519,13 @@ class Vast extends Plugin {
 
   onReadyForPreroll = () => {
     this.debug('readyforpreroll');
-    this.readAd();
+    // Decided here (after the play request) rather than eagerly at construction, so the
+    // outcome is correct whatever the VAST resolution timing: no ad -> skip to content.
+    if (this.adsArray.length === 0) {
+      this.disablePreroll();
+    } else {
+      this.readAd();
+    }
   };
 
   onReadyForPostroll = async () => {
