@@ -1,3 +1,12 @@
+## [1.7.1](https://github.com/ArteGEIE/videojs-vast/compare/v1.7.0...v1.7.1) (2026-06-23)
+
+
+### Bug Fixes
+
+* emit vast.play (AD_STARTED) on real ad start instead of adstart (VAST-90) ([#119](https://github.com/ArteGEIE/videojs-vast/issues/119)) ([4cdcabf](https://github.com/ArteGEIE/videojs-vast/commit/4cdcabf37f9b74b1752e1dcd769787646291a729))
+
+
+
 ## [1.7.0](https://github.com/ArteGEIE/videojs-vast/compare/v1.6.0...v1.7.0) (2026-06-11)
 
 ### Changed
