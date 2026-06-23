@@ -1,3 +1,12 @@
+## [1.7.2](https://github.com/ArteGEIE/videojs-vast/compare/v1.7.1...v1.7.2) (2026-06-23)
+
+
+### Bug Fixes
+
+* play content on empty/no-ad VAST (VAST-92) ([#120](https://github.com/ArteGEIE/videojs-vast/issues/120)) ([267e492](https://github.com/ArteGEIE/videojs-vast/commit/267e4923ad3a4ae0764d265d058ab6e3148922ff))
+
+
+
 ## [1.7.1](https://github.com/ArteGEIE/videojs-vast/compare/v1.7.0...v1.7.1) (2026-06-23)
 
 
