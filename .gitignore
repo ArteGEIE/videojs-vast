@@ -34,3 +34,5 @@ cypress/screenshots/*
 CLAUDE.md
 docs/demo.js
 docs/demo.js.map
+docs/demo.css
+docs/demo.css.map
