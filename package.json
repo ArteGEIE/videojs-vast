@@ -35,7 +35,7 @@
     "ci:changelog": "conventional-changelog --preset angular --same-file --infile CHANGELOG.md",
     "lint": "eslint ./src",
     "serve": "serve -l 3333 docs",
-    "start": "concurrently \"npm run serve\" \"chokidar 'src/**/*.js' -c 'npm run bundle:demo'\" \"chokidar 'src/**/*.js' -c 'npm run build:local'\"",
+    "start": "concurrently \"npm run serve\" \"chokidar 'src/**/*.js' --initial -c 'npm run bundle:demo'\" \"chokidar 'src/**/*.js' -c 'npm run build:local'\"",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
     "test:e2e": "wait-on http://localhost:3333/ & cypress run --browser chrome",
