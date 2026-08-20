@@ -48,7 +48,7 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.21.5",
-    "concurrently": "^9.2.1",
+    "concurrently": "^9.2.4",
     "conventional-changelog-cli": "^5.0.0",
     "conventional-commits-parser": "^6.2.1",
     "cypress": "^15.21.0",
