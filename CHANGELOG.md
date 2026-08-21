@@ -1,3 +1,18 @@
+## [1.7.3](https://github.com/ArteGEIE/videojs-vast/compare/v1.7.2...v1.7.3) (2026-08-21)
+
+### Changed
+
+- **VAST-89:** Vendor the Video.js stylesheet in the demo page. It was loaded from the `vjs.zencdn.net` CDN, which sat in the critical path of the Cypress e2e job since that page is its fixture. It is now bundled from the local `video.js` dependency, which also realigns it with the player version (the CDN served a pinned 8.0.4 against video.js 8.3.0)
+- **VAST-89:** Run the demo bundler on `npm start`, so a fresh clone is served with its script and styles instead of waiting for the first change under `src/`
+- **VAST-93:** Bump `@xmldom/xmldom` from 0.8.7 to 0.8.14, clearing all advisories reported by `npm audit`. The vulnerable code path (XML serialization) was never reached in this project
+- Dependency maintenance: 16 Dependabot updates merged, including `cypress`, `axios`, `@babel/core`, `vite`, `postcss` and `lodash`
+
+### Notes
+
+No functional change for integrators: `dist/cjs` and `dist/mjs` are unchanged since 1.7.2, and the declared dependencies are identical. This release covers tooling, the demo page and transitive dependency hygiene.
+
+
+
 ## [1.7.2](https://github.com/ArteGEIE/videojs-vast/compare/v1.7.1...v1.7.2) (2026-06-23)
 
 
