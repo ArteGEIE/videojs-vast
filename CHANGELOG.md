@@ -1,3 +1,18 @@
+## [1.7.4](https://github.com/ArteGEIE/videojs-vast/compare/v1.7.3...v1.7.4) (2026-08-26)
+
+### Changed
+
+- **VAST-94:** Drop `safari11` from the ESM build target. The target declared `['es2020', 'safari11']`, which is contradictory since Safari 11 predates ES2020. esbuild kept the most restrictive target and had to downlevel destructuring for Safari 11, which it cannot do below Safari 15: 0.27 stayed silent and emitted the code untransformed, while 0.28 fails the build outright
+- Bump `esbuild` from 0.27.3 to 0.28.2, unblocked by the target fix above
+
+### Bundle impact
+
+`dist/mjs/index.js` drops from 38 KB to 36 KB. The only removed code is the `__spreadValues` helper set, which esbuild emitted to transpile object spread for Safari 11. Native object spread is supported from Safari 11.1, and web-front targets `safari >= 12`, so no supported browser relied on those helpers. `dist/cjs/index.js` is unchanged: the CommonJS build never declared a target.
+
+Integrators supporting Safari 11.0 exactly would be affected. Note that destructuring was never transpiled for that target anyway, so the guarantee it implied was not actually produced.
+
+
+
 ## [1.7.3](https://github.com/ArteGEIE/videojs-vast/compare/v1.7.2...v1.7.3) (2026-08-21)
 
 ### Changed
