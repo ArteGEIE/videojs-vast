@@ -1,0 +1,14 @@
+{
+  "setup": [
+    "npm ci"
+  ],
+  "run": [
+    {
+      "name": "dev",
+      "commands": [
+        "npm run dev"
+      ],
+      "default": true
+    }
+  ]
+}
