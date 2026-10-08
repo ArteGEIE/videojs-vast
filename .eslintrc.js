@@ -4,6 +4,9 @@ module.exports = {
     es2021: true,
   },
   extends: 'airbnb-base',
+  // Copied verbatim from tooling shared across repositories, so it does not follow this repo's
+  // style and editing it here would make the copies drift apart silently.
+  ignorePatterns: ['scripts/dev-port.mjs'],
   overrides: [
   ],
   parserOptions: {

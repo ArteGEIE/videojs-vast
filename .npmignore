@@ -7,3 +7,5 @@ esbuild.js
 .gitignore
 .eslintrc.js
 coverage
+scripts
+.super.engineering

@@ -139,7 +139,14 @@ The plugin includes a self-contained development environment with a demo page.
 
 * Clone the repository with ```git clone https://github.com/ArteGEIE/videojs-vast.git```
 * Install dependencies with ```npm install```
-* Run ```npm start``` to start the dev environment (serves the demo on http://localhost:3333, watches for changes and rebuilds automatically)
+* Run ```npm run dev``` to start the dev environment (watches for changes and rebuilds automatically). It serves the demo on a port allocated for the current worktree, printed at startup, so several worktrees can run side by side. ```PORT_WEB=3333 npm run dev``` forces a port; if that port is taken the launch fails rather than quietly moving.
+* ```npm start``` still exists and serves on http://localhost:3333 unless ```PORT_WEB``` is set
+
+Cypress and the ```wait-on``` of ```npm run test:e2e``` read the same ```PORT_WEB```, falling back to 3333. Running the e2e suite against an allocated port means passing it the printed port:
+
+```
+PORT_WEB=[PORT] npm run test:e2e
+```
 
 If you prefer using [**yalc**](https://www.npmjs.com/package/yalc) to test the plugin within your own project:
 
